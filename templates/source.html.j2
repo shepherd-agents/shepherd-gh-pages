@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }} &middot; Markdown source</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../assets/logo-shepherd.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../github-markdown.css">
+<link rel="stylesheet" href="../source.css">
+</head>
+<body>
+<div class="src-bar">
+  <a href="../">&larr; Back to the article</a>
+  <span class="src-bar__note">Rendered from <code>shepherd.md</code> in a GitHub README style</span>
+  <a class="src-bar__raw" href="raw.html">View raw</a>
+</div>
+<article class="markdown-body">
+<h1>{{ meta.title }}</h1>
+<p>{% for a in meta.authors %}{{ a.name }}{% if a.equal %}*{% endif %}<sup>{{ a.affil }}</sup>{% if not loop.last %}, {% endif %}{% endfor %}<br>
+{% for af in meta.affiliations %}<sup>{{ af.id }}</sup>{{ af.name }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+<p>{% for l in meta.links %}{% if l.url %}<a href="{{ l.url }}">{{ l.label }}</a>{% if not loop.last %} &middot; {% endif %}{% endif %}{% endfor %}</p>
+<hr>
+{{ body }}
+</article>
+</body>
+</html>

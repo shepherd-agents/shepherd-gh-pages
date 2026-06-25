@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }}</title>
+<meta name="description" content="{{ meta.description | default('') }}">
+<link rel="icon" href="../assets/logo-shepherd.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="blog.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="nav__brand" href="../"><img src="../assets/logo-shepherd.png" alt=""><span>SHEPHERD</span></a>
+  <div class="nav__links">
+    <a href="../">Home</a>
+    <a href="https://arxiv.org/abs/2605.10913">Paper</a>
+    <a href="https://github.com/dcx/poc-crank-v2">Code</a>
+  </div>
+</nav>
+{% if variant_note %}<p class="ab-note">{{ variant_note }}</p>{% endif %}
+<div class="layout">
+  <nav id="TOC" role="doc-toc" aria-label="Table of contents">
+    <button class="toc-fab" type="button" aria-controls="toc-panel" aria-expanded="false">
+      <svg class="toc-fab__icon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.5h13M1.5 8h13M1.5 12.5h8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Contents
+    </button>
+    <div class="toc-backdrop"></div>
+    <aside class="toc-panel" id="toc-panel">
+      <p class="toc-label">Contents</p>
+      {{ toc }}
+    </aside>
+  </nav>
+  <main class="post">
+    <header class="post__head">
+      <h1 class="post__title"><img class="post__title-logo" src="../assets/logo-shepherd.png" alt="">{{ meta.title | replace("Shepherd:", '<span class="brand-name">Shepherd</span>:') }}</h1>
+      <p class="post__authors">
+        {% for a in meta.authors %}<a href="{{ a.url }}">{{ a.name }}</a>{% if a.equal %}{% if a.note %}<span class="sn sn--byline"><input type="checkbox" id="sn-byline" class="sn-toggle"><label for="sn-byline" class="sn-ref">*</label><span class="sn-body">{{ a.note }}</span></span>{% else %}<sup>*</sup>{% endif %}{% endif %}<sup>{{ a.affil }}</sup>{% if not loop.last %},{% if a.break_after %}<br>{% else %} {% endif %}{% endif %}{% endfor %}
+      </p>
+      <p class="post__affil"><span class="affil-pill">{% for af in meta.affiliations %}<sup>{{ af.id }}</sup>{{ af.name }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</span></p>
+      {% if meta.date_display %}<p class="post__date">{{ meta.date_display }}</p>{% endif %}
+      <p class="post__links">
+        {% for l in meta.links %}{% if l.url %}<a href="{{ l.url }}">{{ l.label }}</a>{% else %}<span class="off">{{ l.label }}</span>{% endif %}{% if not loop.last %} <span class="sep">|</span> {% endif %}{% endfor %}
+      </p>
+    </header>
+    <article class="post-body">
+{{ body }}
+    </article>
+    <footer class="post__foot">
+      <p>SHEPHERD &middot; <a href="../">project home</a></p>
+    </footer>
+  </main>
+</div>
+<script src="blog.js" defer></script>
+</body>
+</html>

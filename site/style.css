@@ -1,0 +1,281 @@
+/* ============================================================
+   SHEPHERD landing page — plain academic project page
+   White background, centered single column, static figures.
+   ============================================================ */
+
+:root {
+  --bg:     #ffffff;
+  --text:   #1f2329;
+  --muted:  #5c636e;
+  --faint:  #8b929c;
+  --line:   #e6e8ec;
+  --code-bg:#f6f7f9;
+  --link:   #0d7a70;     /* calm teal */
+  --link-h: #0a5a52;
+  --accent: #0d7a70;
+  --sans: "Source Sans 3", system-ui, -apple-system, Segoe UI, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --maxw: 820px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.65;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--link-h); text-decoration: underline; }
+em { font-style: italic; }
+sup { font-size: .68em; color: var(--muted); }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+/* ---------- nav ---------- */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: var(--maxw); margin: 0 auto;
+  padding: 14px 22px;
+}
+.nav__brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); letter-spacing: .02em; }
+.nav__brand:hover { text-decoration: none; }
+.nav__brand img { width: 24px; height: 24px; }
+.nav__links { display: flex; gap: 18px; }
+.nav__links a { color: var(--muted); font-size: .95rem; }
+.nav__links a:hover { color: var(--link); text-decoration: none; }
+@media (max-width: 640px) { .nav__links a:not(:last-child) { display: none; } }
+
+/* ---------- layout ---------- */
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 8px 22px 80px; }
+
+section { margin: 40px 0; }
+h2 { font-size: 1.5rem; font-weight: 700; margin: 0 0 14px; letter-spacing: -.01em; }
+h3 { font-size: 1.15rem; font-weight: 600; margin: 30px 0 8px; }
+p  { margin: 0 0 16px; }
+.muted { color: var(--muted); font-size: .95rem; }
+
+/* ---------- hero ---------- */
+.hero { text-align: center; padding: 26px 0 18px; border-bottom: 1px solid var(--line); }
+.hero__head { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.hero__logo { width: 92px; height: 92px; flex: none; }
+.hero__title { font-size: clamp(1.5rem, 3.2vw, 2.2rem); font-weight: 700; line-height: 1.15; letter-spacing: -.02em; margin: 0 auto 14px; max-width: 18em; text-align: center; }
+.hero__tag { font-size: clamp(1.1rem, 2.2vw, 1.32rem); color: var(--accent); font-weight: 600; margin: 0 0 20px; }
+.authors { font-size: 1.08rem; line-height: 1.5; margin: 0 auto 6px; max-width: 44em; }
+.affil { font-size: .95rem; color: var(--muted); margin: 0 0 20px; }
+
+.links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 0; }
+.lnk {
+  display: inline-block; font-size: 1.12rem; font-weight: 600;
+  padding: 10px 26px; border-radius: 999px;
+  background: var(--text); color: #fff;
+}
+.lnk:hover { background: #000; color: #fff; text-decoration: none; }
+.lnk--off { background: var(--code-bg); color: var(--faint); cursor: default; }
+
+/* affiliation logos */
+.orgs { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 30px; margin: 6px 0 20px; }
+.orgs img { height: 54px; width: auto; opacity: .88; }
+.orgs img[alt="Stanford NLP Group"] { height: 104px; }
+.orgs a { display: inline-flex; }
+.orgs a:hover img { opacity: 1; }
+@media (max-width: 480px) { .orgs { gap: 18px; } .orgs img { height: 42px; } .orgs img[alt="Stanford NLP Group"] { height: 80px; } }
+
+/* ---------- figures ---------- */
+figure { margin: 22px 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.teaser { margin: 30px 0; }
+
+/* ---------- code ---------- */
+pre.code {
+  background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 16px 18px; overflow-x: auto; margin: 18px 0;
+}
+pre.code code { background: none; padding: 0; font-size: .82rem; line-height: 1.7; color: #2a2f37; white-space: pre; }
+
+/* ---------- details ---------- */
+details { margin: 8px 0 0; border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+details p { margin-top: 10px; font-size: .95rem; color: var(--muted); }
+
+/* ---------- facts list ---------- */
+.facts { margin: 6px 0 0; padding-left: 22px; }
+.facts li { margin-bottom: 12px; }
+
+/* ---------- footer ---------- */
+.footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); text-align: center; color: var(--faint); font-size: .9rem; }
+
+/* ===== animated "execution becomes data" diagram ===== */
+.anim {
+  width: min(1080px, 94vw);
+  margin: 26px 0 10px;
+  margin-left: calc((100% - min(1080px, 94vw)) / 2);
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 30px;
+  align-items: center;
+}
+.anim__diagram svg { width: 100%; height: auto; display: block; }
+.trace-svg text { font-family: var(--sans); font-size: 14px; }
+
+.anim__code { display: flex; flex-direction: column; gap: 10px; font-family: var(--mono); font-size: .82rem; line-height: 1.5; }
+.cimport { color: #1f2329; padding: 0 2px; white-space: pre-wrap; }
+.cimport .kwt { color: #0d7a70; }
+.cblock { margin: 0; padding: 12px 15px; border-radius: 9px; white-space: pre; overflow-x: auto; line-height: 1.55; }
+.cblock--agent  { background: #ece4f8; }
+.cblock--meta   { background: #d8efe9; }
+.cblock--manage { background: #fdecd2; }
+.cm { font-weight: 600; }
+.cblock--agent  .cm { color: #7a3fc0; }
+.cblock--meta   .cm { color: #0d7a70; }
+.cblock--manage .cm { color: #b06a1c; }
+.kw { color: #8a4fd0; }
+.st { color: #3a7d3a; }
+.fn { color: #1f2329; font-weight: 600; }
+
+.anim__replay {
+  grid-column: 1 / -1; justify-self: end;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: .76rem;
+  padding: 6px 13px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--code-bg); color: var(--muted);
+  cursor: pointer;
+}
+.anim__replay:hover { color: var(--accent); border-color: var(--accent); }
+.anim__replay svg { display: block; }
+
+/* ===== scrubber: slide to any step in the trace ===== */
+/* --scrub is a deliberately distinct blue, separate from the teal/violet in the diagram */
+.anim__scrub { grid-column: 1 / -1; padding: 0 12px; --scrub: #2f6bd6; }
+.scrub__track {
+  position: relative; height: 3px; background: var(--line);
+  margin: 18px 12px 40px; cursor: pointer; outline: none; touch-action: none;
+}
+.scrub__track:focus-visible { box-shadow: 0 0 0 3px rgba(47,107,214,.20); border-radius: 2px; }
+.scrub__fill {
+  position: absolute; left: 0; top: 0; height: 100%; width: 100%;
+  background: var(--scrub); transition: width .3s ease;
+}
+.scrub__handle {
+  position: absolute; top: 50%; left: 100%; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--scrub); transform: translate(-50%, -50%);
+  transition: left .3s ease; pointer-events: none; z-index: 2;
+}
+.scrub__track.dragging .scrub__fill,
+.scrub__track.dragging .scrub__handle { transition: none; }
+.scrub__stop {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+}
+.scrub__stop::before {
+  content: ""; width: 15px; height: 15px; border-radius: 50%;
+  background: #fff; border: 2.5px solid #c1c7d0; box-sizing: border-box;
+}
+.scrub__stop.done::before { border-color: var(--scrub); background: var(--scrub); }
+.scrub__lbl {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: .85rem; white-space: nowrap; color: var(--muted);
+}
+.scrub__stop.active .scrub__lbl { color: var(--scrub); font-weight: 600; }
+@media (max-width: 560px) { .scrub__lbl { font-size: .68rem; } }
+
+/* reveal states */
+.g-step { opacity: 0; transition: opacity .55s ease; }
+.g-step.in { opacity: 1; }
+.cblock, .cimport { opacity: 0; transform: translateY(8px); transition: opacity .5s ease, transform .5s ease; }
+.cblock.in, .cimport.in { opacity: 1; transform: none; }
+
+@media (max-width: 820px) {
+  .anim { grid-template-columns: 1fr; gap: 16px; width: 100%; margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-step, .cblock, .cimport { opacity: 1 !important; transform: none !important; }
+}
+
+/* ===== teaser video ===== */
+.teaser__video { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #000; }
+
+/* ===== try it ===== */
+.try { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+@media (max-width: 760px) { .try { grid-template-columns: 1fr; gap: 16px; } }
+.try__text p { margin: 0 0 14px; }
+.try__code { background: #f6f7f9; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; margin: 0; }
+.try__code code { font-family: var(--mono); font-size: .82rem; line-height: 1.85; color: #2a2f37; white-space: pre; }
+.sh-c { color: #8b929c; }
+.sh-s { color: #3a7d3a; }
+
+/* ===== abstract (VS-style) ===== */
+.abstract { text-align: center; }
+.abstract h2 { font-size: 2rem; margin-bottom: 22px; }
+.abstract__body { max-width: 700px; margin: 0 auto; text-align: left; }
+.abstract__body p { font-size: 1.07rem; line-height: 1.8; color: #3a4350; margin: 0 0 18px; }
+.abstract__body p:last-child { margin-bottom: 0; }
+
+/* ===== try it (VS-style heading + dark terminal) ===== */
+.try-h { font-size: 1.7rem; }
+.try-h__accent { color: var(--accent); }
+.try { align-items: start; }
+.try__text p:last-child { margin-bottom: 0; }
+
+.terminal {
+  background: #0e1726; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 14px 38px -16px rgba(14,23,38,.55);
+}
+.terminal__bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px; background: #0b1220; border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.dot--r { background: #ff5f56; } .dot--y { background: #febc2e; } .dot--g { background: #28c840; }
+.terminal__copy {
+  margin-left: auto; display: inline-flex; align-items: center;
+  background: transparent; border: 0; color: #8a93a3; cursor: pointer;
+  padding: 3px 6px; border-radius: 6px;
+}
+.terminal__copy:hover { color: #cdd5e0; background: rgba(255,255,255,.07); }
+.terminal__copy.copied { color: #28c840; }
+.terminal__body { margin: 0; padding: 16px 18px; overflow-x: auto; }
+.terminal__body code { font-family: var(--mono); font-size: .82rem; line-height: 1.9; color: #e6edf3; white-space: pre; background: none; padding: 0; }
+.terminal__body .p { color: #28c840; font-weight: 600; }
+.terminal__body .c { color: #7a8694; }
+.terminal__body .s { color: #e3b341; }
+
+/* ============================================================
+   Responsive / mobile
+   ============================================================ */
+/* Grid and flex children default to min-width:auto, so a wide <pre>/<svg>
+   inside them refuses to shrink and forces horizontal scroll. Let them shrink. */
+.anim__diagram, .anim__code { min-width: 0; }
+.try > * { min-width: 0; }
+.terminal, .try__code { min-width: 0; }
+img, svg, video, pre, table { max-width: 100%; }
+
+@media (max-width: 600px) {
+  .wrap { padding: 8px 16px 64px; }
+  .nav { padding: 12px 16px; }
+  .nav__links { gap: 14px; }
+  .hero { padding: 18px 0 14px; }
+  .hero__title { font-size: clamp(1.4rem, 6.2vw, 1.9rem); max-width: 100%; }
+  .hero__tag { font-size: 1.06rem; }
+  .authors { font-size: .98rem; max-width: 100%; }
+  .affil { font-size: .86rem; }
+  .orgs { gap: 16px; margin-bottom: 18px; }
+  .orgs img { height: 38px; }
+  .orgs img[alt="Stanford NLP Group"] { height: 70px; }
+  .links { gap: 8px; }
+  .lnk { font-size: 1rem; padding: 9px 20px; }
+  .teaser { margin: 22px 0; }
+  figcaption { font-size: .82rem; }
+  h2 { font-size: 1.3rem; }
+  .abstract h2 { font-size: 1.55rem; }
+  .abstract__body p { font-size: 1rem; line-height: 1.7; }
+  .try-h { font-size: 1.4rem; }
+  .anim { gap: 14px; }
+}

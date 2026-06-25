@@ -1,0 +1,52 @@
+/* source.css - GitHub-README-style rendering of shepherd.md
+   Pairs with github-markdown.css; only adds the page chrome + a few overrides
+   so our custom dialect (callouts, sidenotes, figures) reads cleanly here. */
+:root{
+  --sans:"Source Sans 3",system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",monospace;
+  --accent:#0d7a70;
+}
+body{margin:0;background:#fff;font-family:var(--sans)}
+
+/* top bar: back link + raw link */
+.src-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  max-width:980px;margin:0 auto;padding:14px 24px;border-bottom:1px solid #d0d7de;
+  font-size:.9rem;color:#57606a}
+.src-bar a{color:var(--accent);text-decoration:none;font-weight:600}
+.src-bar a:hover{text-decoration:underline}
+.src-bar .src-bar__note{color:#57606a;font-weight:400}
+.src-bar .src-bar__note code{font-family:var(--mono);font-size:.85em;
+  background:#eaeef2;padding:1px 5px;border-radius:4px}
+.src-bar .src-bar__raw{margin-left:auto}
+
+/* the rendered markdown column */
+.markdown-body{box-sizing:border-box;max-width:900px;margin:0 auto;padding:32px 32px 80px}
+@media (max-width:780px){.markdown-body{padding:20px 16px 60px}}
+
+/* figures (we emit <figure>; GitHub markdown leaves them mostly unstyled) */
+.markdown-body figure{margin:20px 0;text-align:center}
+.markdown-body figure img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px}
+.markdown-body figcaption{font-size:.86em;color:#57606a;margin-top:8px;text-align:left}
+
+/* callouts -> GitHub-alert-like boxes */
+.markdown-body .callout{border:1px solid #d0d7de;border-radius:6px;
+  padding:12px 16px;margin:16px 0;background:#f6f8fa}
+.markdown-body .callout>:first-child{margin-top:0}
+.markdown-body .callout>:last-child{margin-bottom:0}
+.markdown-body .callout--insight{background:#ddf4ff;border-color:#b6e3ff}
+.markdown-body .callout--tldr::before{content:"\1F4CC  TL;DR";font-weight:700;display:block;margin-bottom:6px}
+.markdown-body .callout__label{font-weight:700;margin:0 0 6px;color:#0d7a70}
+.markdown-body .callout__logo{height:1.05em;width:auto;vertical-align:-.2em;margin-left:.15em}
+
+/* inline brand marks (logo sized down; blog.css isn't loaded here) */
+.markdown-body .brand{font-weight:700;white-space:nowrap;color:#0d7a70}
+.markdown-body .brand--worker{color:#5a3fa3}
+.markdown-body .brand__logo{height:1.05em;width:auto;vertical-align:-.2em;margin-right:.12em}
+
+/* sidenotes -> inline parenthetical asides (no margins in a README layout) */
+.markdown-body .sn-toggle,.markdown-body .sn-ref{display:none}
+.markdown-body .sn-body{color:#57606a}
+.markdown-body .sn-num{display:none}
+.markdown-body .sn-body::before{content:" ("}
+.markdown-body .sn-body::after{content:")"}
+.markdown-body .sn--byline .sn-body{font-size:.92em}

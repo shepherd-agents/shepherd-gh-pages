@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }} &middot; raw markdown</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../assets/logo-shepherd.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#fff;color:#1f2328;font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .src-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:980px;
+    margin:0 auto;padding:14px 24px;border-bottom:1px solid #d0d7de;
+    font-family:"Source Sans 3",system-ui,sans-serif;font-size:.9rem;color:#57606a}
+  .src-bar a{color:#0d7a70;text-decoration:none;font-weight:600}
+  .src-bar a:hover{text-decoration:underline}
+  .src-bar .src-bar__dl{margin-left:auto}
+  pre{max-width:980px;margin:0 auto;padding:24px 24px 80px;white-space:pre-wrap;
+    word-wrap:break-word;font-size:.82rem;line-height:1.6;tab-size:2}
+</style>
+</head>
+<body>
+<div class="src-bar">
+  <a href="../">&larr; Back to the article</a>
+  <a href="./">Rendered README</a>
+  <a class="src-bar__dl" href="shepherd.md" download>Download .md</a>
+</div>
+<pre>{{ raw | e }}</pre>
+</body>
+</html>

@@ -92,10 +92,9 @@ def convert_callouts(md, render_inner):
                 inner.append(re.sub(r"^>\s?", "", lines[i]))
                 i += 1
             html = render_inner("\n".join(inner))
-            # takeaway callouts get a "lightbulb + Takeaway + shepherd logo" label
-            label = ('<p class="callout__label">\U0001F4A1 Takeaway '
-                     '<img class="callout__logo" src="../assets/logo-shepherd.png" alt="">'
-                     '</p>' if ctype == "insight" else "")
+            # takeaway callouts get a bold "💡 Key Takeaway:" label
+            label = ('<p class="callout__label">\U0001F4A1 Key Takeaway:</p>'
+                     if ctype == "insight" else "")
             out += ["", '<aside class="callout callout--%s">' % ctype, label, html,
                     "</aside>", ""]
         else:
@@ -139,12 +138,10 @@ def render_inline(text):
     return html
 
 
-def render_post(text, logos="full"):
+def render_post(text):
     """Front-matter + dialect + markdown -> (meta, body html, toc).
 
-    logos="full": every :shepherd:/:worker:/:agent: token renders its inline logo.
-    logos="min":  conservative A/B variant; only the first mention of each token
-                  keeps a logo, the rest become plain words."""
+    Every :shepherd:/:worker:/:agent: token renders its inline logo."""
     meta, body = parse_front_matter(text)
     body = convert_figures(body, render_caption=render_inline)
     body = convert_callouts(body, render_inner=lambda s: make_md().convert(s))
@@ -174,13 +171,7 @@ def render_post(text, logos="full"):
     html = html.replace(":smark:", _brand("brand", "logo-shepherd.png", "Shepherd"))
     html = html.replace(":cro:", _brand("brand", "logo-shepherd.png", "CRO"))
     html = html.replace(":treegrpo:", _brand("brand", "logo-shepherd.png", "Tree-GRPO"))
-    if logos == "min":
-        # only the first mention of each token keeps a logo; the rest go plain
-        html = html.replace(":shepherd:", sh, 1).replace(":shepherd:", "Shepherd")
-        html = html.replace(":worker:", wk, 1).replace(":worker:", "worker")
-        html = html.replace(":agent:", ag, 1).replace(":agent:", "agent")
-    else:
-        html = html.replace(":shepherd:", sh).replace(":worker:", wk).replace(":agent:", ag)
+    html = html.replace(":shepherd:", sh).replace(":worker:", wk).replace(":agent:", ag)
     return meta, html, toc
 
 
@@ -205,22 +196,10 @@ def main():
     blog_dir = os.path.join(_HERE, "site", "blog")
     os.makedirs(blog_dir, exist_ok=True)
 
-    # A/B test: A = full-logo (canonical index.html), B = conservative (lite.html).
-    # Both live in the same directory so their relative asset paths are identical.
-    out = tmpl.render(meta=meta, body=html, toc=toc,
-                      variant_note='A/B test: full-logo version. '
-                                   '<a href="lite.html">See the conservative-logo version.</a>')
+    out = tmpl.render(meta=meta, body=html, toc=toc)
     with open(os.path.join(blog_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(out)
     print("wrote", os.path.join(blog_dir, "index.html"))
-
-    _, html_min, _ = render_post(text, logos="min")
-    out_min = tmpl.render(meta=meta, body=html_min, toc=toc,
-                          variant_note='A/B test: conservative-logo version. '
-                                       '<a href="./">See the full-logo version.</a>')
-    with open(os.path.join(blog_dir, "lite.html"), "w", encoding="utf-8") as f:
-        f.write(out_min)
-    print("wrote", os.path.join(blog_dir, "lite.html"))
 
     # GitHub-README-style source page + the raw markdown it renders
     src_dir = os.path.join(_HERE, "site", "blog", "source")

@@ -69,10 +69,9 @@ base-agent logo plus the word (in the worker violet), to contrast with the
 hatted meta-agent. Also sparing. Append letters after the token to pluralize:
 `:worker:s` renders "worker" + the logo, then "s".
 
-For result tables, always-on method marks render the hat logo + green name and
-are NOT reduced in the conservative A/B variant: `:smark:` -> Shepherd,
-`:cro:` -> CRO, `:treegrpo:` -> Tree-GRPO. Use them in the winning row/column
-label so the Shepherd method stands out.
+For result tables, always-on method marks render the hat logo + green name:
+`:smark:` -> Shepherd, `:cro:` -> CRO, `:treegrpo:` -> Tree-GRPO. Use them in
+the winning row/column label so the Shepherd method stands out.
 
 ## Callouts
 
@@ -86,10 +85,9 @@ label so the Shepherd method stands out.
 ```
 
 `[!tldr]` renders the 📌 TL;DR box (tinted like the landing-page code blocks);
-`[!insight]` renders the blue takeaway box, auto-labeled "💡 Shepherd" with the
-logo. Content inside is normal markdown (lists,
-bold, inline code). A blockquote that does NOT start with `[!type]` stays a
-plain blockquote.
+`[!insight]` renders the blue takeaway box, auto-labeled with a bold
+"💡 Key Takeaway:". Content inside is normal markdown (lists, bold, inline
+code). A blockquote that does NOT start with `[!type]` stays a plain blockquote.
 
 ## Figures
 

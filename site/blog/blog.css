@@ -96,10 +96,6 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1
   #TOC.open .toc-panel{transform:translateY(0)}
 }
 
-/* ---- A/B test note (temporary) ---- */
-.ab-note{max-width:var(--layout);margin:0 auto;padding:8px 22px;font-size:.82rem;
-  color:var(--muted);text-align:center;background:#fff7e6;border-bottom:1px solid #f0e3c4}
-.ab-note a{font-weight:600}
 
 /* ---- inline brands (:shepherd: meta-agent, :worker:/:agent: base agent) ---- */
 .brand{font-weight:700;white-space:nowrap;color:var(--accent)}   /* Shepherd green */

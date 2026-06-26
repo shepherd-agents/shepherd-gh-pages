@@ -32,11 +32,11 @@ links:
 
 ## Motivation
 
-Your harness makes the most expensive calls in the system: what to retry, which attempt to keep, when to give up. It can already pause an agent, fork it, and roll it back. Yet nothing watches the harness itself, and nothing can act on it the way it acts on the agent.
+The best way to get an agent through a hard task, increasingly, is to put another agent in charge of it. These **meta-agents**, higher-order agents that operate on other agents and their execution, are becoming central to getting real work out of agentic systems: coordinating parallel workers, halting a risky action before it runs, repairing a failed trajectory.
 
-The reason is that agent execution was never *data*. A run lives scattered across transcripts and environment snapshots, while the harness sits outside it as privileged host code. You can read the logs after the fact. You cannot pick the run up and branch it.
+Every one of those jobs needs the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
 
-Today's runtimes each hand you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*, not for a second agent acting *on* it. None lets you take another :agent:'s whole execution at once, its model state and environment and history, and branch that as a single object. So every meta-agent rebuilds the same plumbing, and the real work, deciding when to step in, ends up buried in orchestration code.
+Existing runtimes each give you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*, not for a second agent acting *on* it. None lets you operate on another :agent:'s whole execution and definition as data.
 
 | Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
 |---|:---:|:---:|:---:|:---:|
@@ -50,9 +50,9 @@ Today's runtimes each hand you a piece. OpenHands exposes a session's event stre
 
 ## The idea: agents all the way up
 
-:shepherd: writes down what an agent does, as it does it. Every model call, tool call, and file write is recorded in a trace before it runs. The trace works like Git: you can branch it, jump back to any earlier point, and replay from there.
+Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
 
-That changes what a harness is. Once a run is just data in a trace, the code that manages the run has no special status: it is an agent too, one whose input is another agent's run. A meta-agent over a meta-agent is the same construction again, which is where the name comes from: agents all the way up.
+The piece that matters is the **higher-order function**, one that takes another function as an argument. An agent whose argument is another agent's run is exactly that, and we call it a meta-agent. Do it once more, a meta-agent over a meta-agent, and you get the same construction one level up: agents all the way up.
 
 The system has four parts:
 
@@ -63,7 +63,16 @@ The system has four parts:
 | **Scope** | Where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step. |
 | **Trace** | The run's history: a commit graph where any past state is reachable by its hash. |
 
-Underneath, the trace really is Git: `scope.fork()` is `git checkout -b`, `scope.merge()` is `git merge`, `scope.discard()` is `git branch -D`. The whole design comes down to one sentence: a meta-agent is a task that takes another task as its input, with no privileged control loop and no base class to subclass.
+To hand a run to a higher-order agent, the run itself has to be a value: something you can hold, copy, and rewind, not a transcript you read after the fact. So :shepherd: records every action an agent takes, a model call, a tool call, a file write, as a commit in a Git-like trace, and a meta-agent operates on that run the way you operate on a repo:
+
+| What you'd do to a repo | What :shepherd: does to a run |
+|---|---|
+| `git checkout -b` | fork the agent **and its environment** to try an alternative |
+| `git merge` | keep the branch that worked |
+| `git branch -D` | throw away the one that didn't |
+| `git log` | read every model call, tool call, and edit as commits |
+
+The payoff is one line: because both the agent and its run are now data, a meta-agent is a plain function that takes another agent's run as its argument, with no privileged control loop and no base class to subclass.
 
 ```python
 import shepherd as shp
@@ -82,17 +91,6 @@ with shp.workspace(model=claude("sonnet-4-5")):
 ```
 
 `oversee` watches the effect stream without disturbing it, pushes effects in to intervene, checks out an earlier commit to rewind, and forks a scope to try something else. Because it is an agent like any other, a third agent can supervise the supervisor by taking `oversee`'s run as its input.
-
-**The operations.** A scope exposes four core operations, each one a Git move:
-
-| Operation | What it does | Git analog |
-|---|---|---|
-| `emit` | append an effect (a model or tool call) to the trace | `git commit` |
-| `fork` | branch a scope, agent and filesystem together | `git checkout -b` |
-| `merge` | fold a forked branch back in | `git merge` |
-| `discard` | throw a branch away | `git branch -D` |
-
-Everything else builds on these four: reverting and replaying are a checkout plus a re-run, and observing a worker is a read-only tap on the same effect stream, with no write of its own.
 
 **The life of an effect.** The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the *intent* as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its *outcome* is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).
 
@@ -130,7 +128,13 @@ Because a fork preserves the byte-identical prefix of a run, replaying a branch 
 
 ## Results
 
-Three meta-agents on one :shepherd: substrate, at three moments in an agent's life: while it runs, after it finishes, and while you train it.
+Three meta-agents on one :shepherd: substrate, at three moments in an agent's life. Each is a plain agent, and each leans on a different substrate property.
+
+| When | Meta-agent | Substrate property it leans on |
+|---|---|---|
+| While it runs | Multi-Agent Runtime Intervention | observe without perturbing |
+| After it finishes | Counterfactual Meta-Optimization | byte-for-byte replay |
+| While you train it | Meta-Agent-Guided Tree RL | cheap forking |
 
 ### Multi-Agent Runtime Intervention
 
@@ -159,7 +163,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 
 **How CRO works.** CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache (the system-performance result), so each evaluation stays cheap.
 
-**Results.** CRO takes 4 of the 5 benchmarks, with both the highest held-out score and the lowest wall-clock on those four.
+**Results.** CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound TerminalBench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 4 points (12.8%) at the least wall-clock of any method.
 
 | Method | HoVer | MATH | IFBench | LiveCodeBench | TB-2 (avg@5) |
 |---|---|---|---|---|---|
@@ -168,7 +172,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 | MetaHarness | 77.8±0.4 (235) | 79.3±1.2 (101) | **52.3±1.4** (126) | 40.0±3.6 (217) | 31.2 (173) |
 | :cro: | **79.4±0.2** (120) | **80.0±2.0** (42) | 51.3±1.1 (82) | **51.0±1.7** (117) | **35.2** (73) |
 
-*Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per row. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4 points) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.*
+*Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4 points) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.*
 
 ![**Figure 4.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
@@ -181,7 +185,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 
 **Setup.** Training runs in two phases. First, rollout collection: the base policy runs on terminal-agent tasks from the Endless Terminals corpus inside E2B or Daytona sandboxes. At selected turns the meta-agent forks the scope and samples K=4 sibling continuations from that exact state, each played to completion, and saves the resulting tree. Second, training: the trees feed a GRPO trainer (SLIME on Modal H100s) whose advantages come from the spread across shared-prefix siblings, so there is no separate value model and no process reward model. Flat GRPO and Tree-GRPO run on matched generation compute (same token budget, same rollout steps), so the tree structure adds signal without adding compute.
 
-**Why the forks help.** Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, recovered from the same one-bit reward. And because forked branches reuse the byte-identical prefix, the extra continuations replay largely from the KV cache (the system-performance result), so collecting a K-way tree costs little more than a single rollout.
+**Why the forks help.** Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, recovered from the same one-bit reward. And because forked branches reuse the byte-identical prefix, each sibling pays only for its own suffix while the shared prefix resolves from the KV cache (the system-performance result). A K-way tree therefore costs about K extra suffixes, not K full rollouts.
 
 ![**Figure 5.** Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.](../assets/fig-treegrpo.png)
 
@@ -199,28 +203,70 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 
 ## FAQ
 
-<details>
+<details markdown="1">
 <summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
 
 The copy-on-write fork is built on Linux OverlayFS, so the substrate runs natively on Linux. On macOS and Windows you run it through a Linux sandbox, which is also how you get a clean, reproducible environment per agent. First-class macOS and Windows support is on the roadmap; see the [docs](https://docs.shepherd-agents.ai/) for current status.
 
 </details>
 
-<details>
-<summary>What does a fork actually capture?</summary>
+<details markdown="1">
+<summary>Do I have to rewrite my agent? Does it work with my model?</summary>
 
-Everything the agent needs to continue from that exact point: the filesystem (as a copy-on-write overlay), the agent's message history and model context, and its position in the execution trace. `scope.fork()` copies the agent and its environment together in one step, so a branch is a complete, runnable continuation rather than just a filesystem snapshot.
-
-</details>
-
-<details>
-<summary>Which sandbox backends are supported?</summary>
-
-E2B, Daytona, and Modal today, through pluggable device adapters, with more to come. The substrate talks to a sandbox through a small `Device` interface (checkpoint, revert, exec), so adding a backend means writing one adapter, not touching the core.
+Shepherd is its own lightweight, multi-provider framework: you write agents, and meta-agents, as typed `@shp.task` functions and swap the model behind a provider (Claude by default). A meta-agent then supervises any task on the substrate without that task knowing it is watched. It is the runtime your agents run on, not a layer you bolt onto an existing app.
 
 </details>
 
-<details>
+<details markdown="1">
+<summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary>
+
+It wraps it. Shepherd adds a copy-on-write layer over the container your agent already runs in, with backends for E2B, Modal, and Daytona behind one `Device` interface. The fork couples the agent's process and its filesystem in a single step. It is open source and self-hostable, with no hosted-service lock-in.
+
+</details>
+
+<details markdown="1">
+<summary>What does a fork capture, and what is left out?</summary>
+
+The agent's filesystem and process state, plus its message history and position in the trace, all in one copy-on-write step, so a branch is a runnable continuation rather than just a file snapshot. What is not in the snapshot: live network connections, in-flight RPCs, and external database transactions. Those fall under the compensable and irreversible tiers below and need handlers or gating, not magic.
+
+</details>
+
+<details markdown="1">
+<summary>If a meta-agent reverts a run, what about the email it already sent or the card it charged?</summary>
+
+Shepherd tags every effect by reversibility: filesystem and sandbox state is **reversible** (rolled back natively), database-style writes are **compensable** (rolled back through a handler you supply), and genuinely **irreversible** effects, like model calls, payments, and emails, are never silently undone. The trick is that an action's *intent* and its *outcome* are separate events, so a meta-agent can see the intent to send and deny it before it fires. You gate irreversible actions up front rather than try to claw them back; whatever has already gone out is recorded for audit, not recalled.
+
+</details>
+
+<details markdown="1">
+<summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary>
+
+A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run or re-paid for. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.
+
+</details>
+
+<details markdown="1">
+<summary>Doesn't a second agent watching the first double my cost?</summary>
+
+It can, and we do not hide it: on a short task the supervisor's tokens can outweigh the worker's. Two things keep it in check. A live supervisor only samples the stream periodically and spends tokens when it actually intervenes (1 to 5 minutes of overhead per pair on CooperBench). And offline uses like CRO and Tree-GRPO reuse cached computation, which amortizes the cost. Whether it pays off depends on task length and the worker-to-meta cost ratio.
+
+</details>
+
+<details markdown="1">
+<summary>If the supervisor is also an LLM, doesn't it hallucinate too?</summary>
+
+The substrate itself is deterministic mechanism: it records, forks, reverts, and enforces permission gates, and makes no agentic decisions. The judgment lives in some agent, which can be an LLM or a deterministic check you write. You choose which actions need a hard gate and which can run on a model's discretion.
+
+</details>
+
+<details markdown="1">
+<summary>Is this production-ready, or a research substrate?</summary>
+
+It is an early alpha release, and the headline results are proofs of existence, not battle-tested deployments. The core is small and its correctness argument is checked in Lean. Treat it as a foundation to build on, not turnkey infrastructure.
+
+</details>
+
+<details markdown="1">
 <summary>Why "Shepherd," and why a sheep?</summary>
 
 <p align="center"><img src="../assets/logo-shepherd.png" alt="Shepherd logo" height="96"></p>

@@ -103,14 +103,17 @@ relative path `../assets/fig-*.png`.
 
 ## Collapsibles (FAQ, asides)
 
-Raw HTML passes through; the inner markdown still renders (md_in_html). Keep a
-blank line after `<summary>` and before `</details>`:
+Raw HTML passes through. For the inner markdown (bold, links, lists) to render,
+the tag **must** carry `markdown="1"` (md_in_html only processes children of a
+flagged element); plain `<details>` leaves `**bold**` and `[links](url)` as
+literal text. Keep a blank line after `<summary>` and before `</details>`:
 
 ```html
-<details>
-<summary>Isn't this just AutoGen orchestrating agents?</summary>
+<details markdown="1">
+<summary>Does it work with my model?</summary>
 
-AutoGen's manager is an LLM in a privileged host loop ...
+Yes. You write agents as typed `@shp.task` functions and **swap the model**
+behind a [provider](https://docs.shepherd-agents.ai/).
 
 </details>
 ```

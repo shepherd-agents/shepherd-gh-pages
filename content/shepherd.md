@@ -225,9 +225,9 @@ It wraps it. Shepherd adds a copy-on-write layer over the container your agent a
 </details>
 
 <details markdown="1">
-<summary>What does a fork capture, and what is left out?</summary>
+<summary>What does a fork capture?</summary>
 
-The agent's filesystem and process state, plus its message history and position in the trace, all in one copy-on-write step, so a branch is a runnable continuation rather than just a file snapshot. What is not in the snapshot: live network connections, in-flight RPCs, and external database transactions. Those fall under the compensable and irreversible tiers below and need handlers or gating, not magic.
+Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one copy-on-write step. Replay the branch and the agent picks up exactly where it left off.
 
 </details>
 
@@ -246,13 +246,6 @@ A replay restores the recorded prefix byte for byte, the same messages and files
 </details>
 
 <details markdown="1">
-<summary>Doesn't a second agent watching the first double my cost?</summary>
-
-It can, and we do not hide it: on a short task the supervisor's tokens can outweigh the worker's. Two things keep it in check. A live supervisor only samples the stream periodically and spends tokens when it actually intervenes (1 to 5 minutes of overhead per pair on CooperBench). And offline uses like CRO and Tree-GRPO reuse cached computation, which amortizes the cost. Whether it pays off depends on task length and the worker-to-meta cost ratio.
-
-</details>
-
-<details markdown="1">
 <summary>If the supervisor is also an LLM, doesn't it hallucinate too?</summary>
 
 The substrate itself is deterministic mechanism: it records, forks, reverts, and enforces permission gates, and makes no agentic decisions. The judgment lives in some agent, which can be an LLM or a deterministic check you write. You choose which actions need a hard gate and which can run on a model's discretion.
@@ -262,7 +255,7 @@ The substrate itself is deterministic mechanism: it records, forks, reverts, and
 <details markdown="1">
 <summary>Is this production-ready, or a research substrate?</summary>
 
-It is an early alpha release, and the headline results are proofs of existence, not battle-tested deployments. The core is small and its correctness argument is checked in Lean. Treat it as a foundation to build on, not turnkey infrastructure.
+Today Shepherd is built for research, and we are actively moving it toward production. The core is small and its correctness argument is checked in Lean, and we are maintaining the framework and hardening it with each release. You can build on it now, and it will keep getting more production-ready over time.
 
 </details>
 

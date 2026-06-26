@@ -32,11 +32,11 @@ links:
 
 ## Motivation
 
-What watches the harness? Right now, nothing. Your harness can pause an agent, fork it, and roll it back, yet it answers to no one, even though it makes your most expensive calls: what to retry, which attempt to keep, when to give up.
+Your harness makes the most expensive calls in the system: what to retry, which attempt to keep, when to give up. It can already pause an agent, fork it, and roll it back. Yet nothing watches the harness itself, and nothing can act on it the way it acts on the agent.
 
-**Why it gets a pass.** Agent execution was never *data*. A run lives scattered across transcripts and environment snapshots, and the harness sits outside it as privileged host code. You can read the logs afterward. You can't pick the run up and branch it.
+The reason is that agent execution was never *data*. A run lives scattered across transcripts and environment snapshots, while the harness sits outside it as privileged host code. You can read the logs after the fact. You cannot pick the run up and branch it.
 
-**What runtimes give you today.** OpenHands hands you a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Each is useful, and each is built for the agent that is *running*, not a second agent acting *on* it. None lets you take another :agent:'s whole execution, model state and environment and history at once, and branch it as one object. So every meta-agent rebuilds the same plumbing, and the real work, deciding when to step in, ends up frozen in orchestration code.
+Today's runtimes each hand you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*, not for a second agent acting *on* it. None lets you take another :agent:'s whole execution at once, its model state and environment and history, and branch that as a single object. So every meta-agent rebuilds the same plumbing, and the real work, deciding when to step in, ends up buried in orchestration code.
 
 | Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
 |---|:---:|:---:|:---:|:---:|
@@ -46,7 +46,7 @@ What watches the harness? Right now, nothing. Your harness can pause an agent, f
 | AgentGit | ○ | ◐ | ◐ | ○ |
 | :smark: | ● | ● | ● | ● |
 
-*● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, not just snapshot its files.*
+*● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.*
 
 ## The idea: agents all the way up
 
@@ -96,14 +96,6 @@ Everything else builds on these four: reverting and replaying are a checkout plu
 
 **The life of an effect.** The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the *intent* as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its *outcome* is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).
 
-**What can be undone.** Not every effect is reversible, so each one is tagged as it is recorded:
-
-| Class | How it is undone | Examples |
-|---|---|---|
-| Reversible | restored exactly on revert | filesystem writes |
-| Compensable | undone by a handler you supply | writes to an external service |
-| Irreversible | cannot be undone; kept for audit | model calls, payments, emails |
-
 ## System performance: forking, observing, and replaying
 
 Everything below forks constantly. A supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. The fork operation sits on the critical path, so the substrate has to make it cheap. This section describes how we built it and how we measured it.
@@ -112,7 +104,7 @@ The mechanism is to avoid copying the filesystem. Each :shepherd: scope is an Ov
 
 ### Setup
 
-We compare four ways to branch a running container's filesystem: a full root-fs copy (`tar`), `docker commit`, BranchFS, and :shepherd:'s overlay.^[We also measured a cloud-snapshot baseline (Modal's `snapshot_filesystem`); its numbers are in the paper.] The workloads are three real Terminal-Bench 2.0 Docker images spanning a 138x size range, at 42 MB, 200 MB, and 5.8 GB. All runs use a single 4 vCPU / 8 GB Linux host with docker and OverlayFS, 50 repetitions per cell, median reported. We time two operations, fork (standing up a usable branch) and revert (rolling a scope back to an earlier commit), and record the disk each fork consumes.
+We compare four ways to branch a running container's filesystem: a full root-fs copy (`tar`), `docker commit`, BranchFS, and :shepherd:'s overlay.^[We also measured a cloud-snapshot baseline (Modal's `snapshot_filesystem`); its numbers are in the paper. The Docker images are pre-built task environments from [Terminal-Bench 2.0](https://arxiv.org/abs/2601.11868) (Merrill et al., 2026).] The workloads are three real Terminal-Bench 2.0 Docker images spanning a 138x size range, at 42 MB, 200 MB, and 5.8 GB. All runs use a single 4 vCPU / 8 GB Linux host with docker and OverlayFS, 50 repetitions per cell, median reported. We time two operations, fork (standing up a usable branch) and revert (rolling a scope back to an earlier commit), and record the disk each fork consumes.
 
 ### Fork and revert latency
 
@@ -131,7 +123,7 @@ A supervisor reads a worker by subscribing to its effect stream, which raises a 
 
 ### KV-cache reuse under replay
 
-Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB2 tasks with Haiku 4.5 through E2B, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
+Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
 
 > [!insight]
 > Two properties account for the cost profile. Copy-on-write keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
@@ -203,17 +195,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Out-of-distribution transfer to TerminalBench 2.0, avg@5 (%); +gain is vs flat GRPO. The Qwen3.5 +5.2 clears its ~3.9 to 4.1 std comfortably.*^[The Nemotron +3.4 only just edges past its ~3.2 to 3.4 std, a slim margin rather than a clean separation.]
 
 > [!insight]
-> Same generation budget, same recipe, same task set. The only change is forking sibling branches mid-rollout to read off per-step advantage, and it is worth a few points on a hard OOD benchmark.
-
-### Post-hoc Trajectory Compression
-
-This one lives in the appendix, but it falls out of the same machinery. A passing agent run is usually longer than it needs to be: dead ends, re-reads, paths abandoned halfway. Because a finished run is a replayable trace, we can ask a sharper question than "did it pass": does a strictly shorter passing run exist?
-
-**Setup.** We start from passing baselines by two coding agents, Claude Sonnet 4.6 and GPT-5.4, on SWE-Bench Verified and TerminalBench 2.0. A meta-agent reads the finished trace, proposes a shorter path that drops the steps it judges unnecessary, and we replay that path on the same task. It counts as a compression only if the shorter run is verified to still pass.
-
-**Results.** A shorter passing run exists more often than not. On SWE-Bench Verified, 68% of Sonnet and 82% of GPT-5.4 passing baselines admit one; on TerminalBench 2.0 it is 77% and 68%. When a run does compress, it compresses hard: mean Sonnet length on SWE-Bench Verified drops from 21.4 to 8.9 model calls.
-
-![**Figure 6.** Most passing runs admit a strictly shorter passing rerun. Left: the share that compress, by model and benchmark. Right: mean model calls before and after.](../assets/fig-trajprune.png)
+> The budget, recipe, and task set are all held fixed. The only change is forking sibling branches mid-rollout to read off per-step advantage, and it buys a few points on a hard OOD benchmark.
 
 ## FAQ
 
@@ -241,7 +223,9 @@ E2B, Daytona, and Modal today, through pluggable device adapters, with more to c
 <details>
 <summary>Why "Shepherd," and why a sheep?</summary>
 
-Because a shepherd is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls one out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.
+<p align="center"><img src="../assets/logo-shepherd.png" alt="Shepherd logo" height="96"></p>
+
+Because a shepherd is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls the agent out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.
 
 </details>
 
@@ -279,7 +263,7 @@ shepherd revert 4
 
 📦 [**PyPI**](https://pypi.org/project/shepherd-ai/0.0.1/)  |  💻 [**Code**](https://github.com/dcx/poc-crank-v2)
 
-So the interesting question isn't ours: what would you build with a harness you can fork and rewind?
+It is the same handful of operations over a run you can fork and rewind. We are releasing Shepherd so you can build the meta-agents we have not thought of yet.
 
 ## Acknowledgments
 

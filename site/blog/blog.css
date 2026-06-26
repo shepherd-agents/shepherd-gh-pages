@@ -123,7 +123,7 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1
 
 /* ---- figures ---- */
 figure{margin:26px 0;max-width:var(--col)}
-figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px}
+figure img{display:block;width:100%;height:auto}
 figcaption{font-size:.86rem;color:var(--muted);margin-top:8px;line-height:1.5}
 
 /* ---- tables ---- */

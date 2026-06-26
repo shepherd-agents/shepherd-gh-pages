@@ -24,7 +24,7 @@ links:
 > [!tldr]
 > A meta-agent watches, steers, or repairs other agents. Today it rebuilds everything by hand: read the transcripts, snapshot the environment, write one-off code to catch a bad write before it lands. The runtime hands it fragments, never the whole run.
 >
-> :shepherd: records every agent-environment interaction as a typed event in a Git-like trace, where any past state can be forked and replayed cheaply. That turns a meta-agent into a plain `@agent` that takes another agent's run as its argument. Deep Research put an agent *inside* the harness; :shepherd: makes the harness *out of* agents.
+> :shepherd: records every agent-environment interaction as a typed event in a Git-like trace, where any past state can be forked and replayed cheaply. That turns a meta-agent into a plain `@shp.task` that takes another agent's run as its argument. Deep Research put an agent *inside* the harness; :shepherd: makes the harness *out of* agents.
 >
 > We build three meta-agents on it. A live supervisor closes **91%** of the coordination gap on CooperBench, lifting pair pass rate from 28.8% to 54.7%. A counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks, in less wall-clock every time. Meta-agent-guided Tree-GRPO adds **+5.2 points** over flat GRPO on Qwen3.5-35B-A3B (and +3.4 on the larger Nemotron-3-Super-120B-A12B). A fork that carries its whole filesystem costs 134 to 143 ms, about **5x** cheaper than `docker commit`, and the core correctness argument is checked in Lean.
 
@@ -38,6 +38,16 @@ What watches the harness? Right now, nothing. Your harness can pause an agent, f
 
 **What runtimes give you today.** OpenHands hands you a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Each is useful, and each is built for the agent that is *running*, not a second agent acting *on* it. None lets you take another :agent:'s whole execution, model state and environment and history at once, and branch it as one object. So every meta-agent rebuilds the same plumbing, and the real work, deciding when to step in, ends up frozen in orchestration code.
 
+| Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
+|---|:---:|:---:|:---:|:---:|
+| BranchFS | ○ | ◐ | ◐ | ○ |
+| Docker | ○ | ◐ | ◐ | ○ |
+| OpenHands | ◐ | ◐ | ◐ | ○ |
+| AgentGit | ○ | ◐ | ◐ | ○ |
+| :smark: | ● | ● | ● | ● |
+
+*● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, not just snapshot its files.*
+
 ## The idea: agents all the way up
 
 :shepherd: writes down what an agent does, as it does it. Every model call, tool call, and file write is recorded in a trace before it runs. The trace works like Git: you can branch it, jump back to any earlier point, and replay from there.
@@ -46,36 +56,53 @@ That changes what a harness is. Once a run is just data in a trace, the code tha
 
 The system has four parts:
 
-- A **task** is an agent. You write it as a plain Python function with an `@agent` decorator.
-- An **effect** is one thing an agent does. It records the intent (the call it is about to make) before the result, which leaves room for a meta-agent to step in between the two.
-- A **scope** is where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step.
-- The **trace** is the run's history: a commit graph where any past state is reachable by its hash.
+| Part | What it is |
+|---|---|
+| **Task** | An agent, written as a plain Python function with an `@shp.task` decorator. |
+| **Effect** | One thing an agent does. It records the intent (the call it is about to make) before the result, leaving room for a meta-agent to step in between the two. |
+| **Scope** | Where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step. |
+| **Trace** | The run's history: a commit graph where any past state is reachable by its hash. |
 
 Underneath, the trace really is Git: `scope.fork()` is `git checkout -b`, `scope.merge()` is `git merge`, `scope.discard()` is `git branch -D`. The whole design comes down to one sentence: a meta-agent is a task that takes another task as its input, with no privileged control loop and no base class to subclass.
 
 ```python
-from shepherd import agent, observe, revert, fork
+import shepherd as shp
+from shepherd.providers import claude
 
-@agent(LLM="haiku")
-def implement(repo, feature):
-    "Implement the feature in the repo"
+@shp.task
+def implement(repo, feature) -> str:
+    "Implement the feature in the repo."
 
-@agent(LLM="opus", tool=[observe, revert, fork])
-def oversee(run):
-    "Watch the worker. If its tests break, revert to an earlier state and retry."
+@shp.task
+def oversee(worker) -> str:
+    "Watch the worker. If its tests fail, revert to the last green commit and retry."
 
-run         = implement(repo, "login")
-implemented = oversee(run)   # the meta-agent manages the agent
+with shp.workspace(model=claude("sonnet-4-5")):
+    result = oversee(implement(repo, "login"))   # the meta-agent manages the worker
 ```
 
-`oversee` watches the effect stream without disturbing it, pushes effects in to intervene, checks out an earlier commit to rewind, and forks a scope to try something else. Because it is an agent like any other, a third agent can supervise the supervisor by taking `oversee`'s run as its input.^[One honest detail: not every effect can be undone. A filesystem write is reversible. A service write is compensable, through a handler you supply. A model call, a payment, an email: those are irreversible, recorded for audit but never un-sendable.]
+`oversee` watches the effect stream without disturbing it, pushes effects in to intervene, checks out an earlier commit to rewind, and forks a scope to try something else. Because it is an agent like any other, a third agent can supervise the supervisor by taking `oversee`'s run as its input.
 
-<details>
-<summary>The formal footing</summary>
+**The operations.** A scope exposes four core operations, each one a Git move:
 
-Each construct maps onto a familiar building block: task = typed function, effect = algebraic effect, scope = region-scoped handler, trace = persistent data structure. The properties we care about (observing without perturbing, an atomic fork of agent and environment together, byte-identical revert and replay) rest on a small algebraic-effects trace machine we mechanized in Lean: forward simulation for the core fragment, trace monotonicity, and a single-child branch-replay skeleton. We mechanized the core correctness argument, not the production Python runtime, and the paper marks exactly where the verified boundary stops.
+| Operation | What it does | Git analog |
+|---|---|---|
+| `emit` | append an effect (a model or tool call) to the trace | `git commit` |
+| `fork` | branch a scope, agent and filesystem together | `git checkout -b` |
+| `merge` | fold a forked branch back in | `git merge` |
+| `discard` | throw a branch away | `git branch -D` |
 
-</details>
+Everything else builds on these four: reverting and replaying are a checkout plus a re-run, and observing a worker is a read-only tap on the same effect stream, with no write of its own.
+
+**The life of an effect.** The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the *intent* as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its *outcome* is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).
+
+**What can be undone.** Not every effect is reversible, so each one is tagged as it is recorded:
+
+| Class | How it is undone | Examples |
+|---|---|---|
+| Reversible | restored exactly on revert | filesystem writes |
+| Compensable | undone by a handler you supply | writes to an external service |
+| Irreversible | cannot be undone; kept for audit | model calls, payments, emails |
 
 ## System performance: forking, observing, and replaying
 

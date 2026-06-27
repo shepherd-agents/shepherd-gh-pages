@@ -81,7 +81,6 @@ from shepherd.providers import claude
 @shp.task
 def implement(repo, feature) -> str:
     "Implement the feature in the repo."
-
 @shp.task
 def oversee(worker) -> str:
     "Watch the worker. If its tests fail, revert to the last green commit and retry."

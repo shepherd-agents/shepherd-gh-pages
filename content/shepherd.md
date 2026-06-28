@@ -112,7 +112,7 @@ The one that has to be cheapest is the fork, since the meta-agents below fork co
 
 ### Setup
 
-We compare four ways to branch a running container's filesystem: a full root-fs copy (`tar`), `docker commit`, BranchFS, and :shepherd:'s overlay.^[We also measured a cloud-snapshot baseline (Modal's `snapshot_filesystem`); its numbers are in the paper. The Docker images are pre-built task environments from [Terminal-Bench 2.0](https://arxiv.org/abs/2601.11868) (Merrill et al., 2026).] The workloads are three real Terminal-Bench 2.0 Docker images spanning a 138x size range, at 42 MB, 200 MB, and 5.8 GB. All runs use a single 4 vCPU / 8 GB Linux host with docker and OverlayFS, 50 repetitions per cell, median reported. We time two operations, fork (standing up a usable branch) and revert (rolling a scope back to an earlier commit), and record the disk each fork consumes.
+We compare four ways to branch a running container's filesystem: a full root-fs copy (`tar`), `docker commit`, BranchFS, and :shepherd:'s overlay.^[We also measured a cloud-snapshot baseline (Modal's `snapshot_filesystem`). The Docker images are pre-built task environments from [Terminal-Bench 2.0](https://arxiv.org/abs/2601.11868) (Merrill et al., 2026).] The workloads are three real Terminal-Bench 2.0 Docker images spanning a 138x size range, at 42 MB, 200 MB, and 5.8 GB. All runs use a single 4 vCPU / 8 GB Linux host with docker and OverlayFS, 50 repetitions per cell, median reported. We time two operations, fork (standing up a usable branch) and revert (rolling a scope back to an earlier commit), and record the disk each fork consumes.
 
 ### Fork and revert latency
 
@@ -150,13 +150,13 @@ Three meta-agents on one :shepherd: substrate, at three moments in an agent's li
 
 ### Multi-Agent Runtime Intervention
 
-CooperBench documents an uncomfortable fact: two coding agents working in parallel on related features do *worse* than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.
+CooperBench documents a fact: two coding agents working in parallel on related features do *worse* than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.
 
 **Setup.** Each task is a pair of related features in one repository. Two Claude Haiku 4.5 :worker:s run in forked scopes, one feature each, and a pair counts as solved only when both features pass their own pytest suite. We compare four conditions over 479 structurally conflicting pairs: one agent doing both features in sequence (the solo single-agent ceiling), two workers in parallel with no coordination, two workers passing peer-to-peer messages (the coop baseline), and two workers under a meta-agent (ours). The comparison that matters is managed against coop: a win there means supervising through the effect stream beats letting the workers message each other directly.
 
 **The intervention loop.** The meta-agent, Claude Sonnet 4.6 or the stronger Opus 4.7, subscribes to both workers' effect streams. Observation is a read-side view of the trace, so watching both workers adds nothing to their context (the zero-token result from the overhead section). Every few seconds the meta-agent inspects what each worker is about to do and picks one of three actions: `inject` a note into a worker's context to redirect it, `handoff` one worker's finished scope to the other as its starting point so the second builds on the first instead of colliding with it, or `discard` a worker that has wedged itself and restart it from a clean fork. None of this touches the workers' code or the framework. The supervisor is an ordinary agent whose input is the pair's run.
 
-**Results.** The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), the Opus meta-agent recovers **91%** of the coordination gap, at 1 to 5 minutes of supervision overhead per pair.^[A proof of existence that the substrate enables live supervision, not a like-for-like compute win.]
+**Results.** The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), the Opus meta-agent recovers **91%** of the coordination gap, at 1 to 5 minutes of supervision overhead per pair.^[A proof of existence that the substrate enables live supervision.]
 
 ![**Figure 3.** A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.](../assets/fig-supervision.png)
 
@@ -208,7 +208,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 | Qwen3.5-35B-A3B | 26.1±4.21 | 34.2±4.05 | **39.4±3.87** (+5.2) |
 | Nemotron-3-Super-120B-A12B | 30.3±3.62 | 33.8±3.41 | **37.2±3.19** (+3.4) |
 
-*Out-of-distribution transfer to TerminalBench 2.0, avg@5 (%); +gain is vs flat GRPO. The Qwen3.5 +5.2 clears its ~3.9 to 4.1 std comfortably.*^[The Nemotron +3.4 only just edges past its ~3.2 to 3.4 std, a slim margin rather than a clean separation.]
+*Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
 
 > [!insight]
 > A meta-agent trains a policy better because cheap mid-rollout forking turns one bit of final reward into a per-step advantage signal. With budget, recipe, and task set held fixed, that buys +5.2 points on a hard out-of-distribution benchmark.

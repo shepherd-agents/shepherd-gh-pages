@@ -44,13 +44,13 @@ links:
 
 ## Motivation
 
-The best way to get an agent through a hard task, increasingly, is to put another agent in charge of it. These **meta-agents**, higher-order agents that operate on other agents and their execution, are becoming central to getting real work out of agentic systems: coordinating parallel workers, halting a risky action before it runs, repairing a failed trajectory.
+The best way to get agents through a hard task, increasingly, is to put another agent in charge of it. These **meta-agents**, higher-order agents that operate on other agents and their execution, are becoming more important to be effective on using agentic systems: coordinating parallel workers, halting a risky action before it runs, repairing a failed run.
 
-Every one of those jobs needs the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
+Each of these jobs shares the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
 
-Existing runtimes each give you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data.
+Existing runtimes each give you partially: OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data.
 
-| Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
+| Method | Intercept execution | Fork Agent + Environment | Revert to past state | Modify behavior |
 |---|:---:|:---:|:---:|:---:|
 | BranchFS | ○ | ◐ | ◐ | ○ |
 | Docker | ○ | ◐ | ◐ | ○ |
@@ -158,8 +158,6 @@ Three meta-agents on one :shepherd: substrate, at three moments in an agent's li
 | While you train it | Meta-Agent-Guided Tree RL | cheap forking |
 
 ![**Mechanism (option 1).** How each meta-agent acts on the execution trace: (a) Multi-Agent Runtime Intervention observes two workers and discards the stuck one; (b) Counterfactual Meta-Optimization forks at the edited commit and replays only the suffix; (c) Meta-Agent-Guided Tree RL forks K sibling rollouts at a chosen turn. *We are choosing between this and option 2 below.*](../assets/fig-mech-combined.png)
-
-![**Mechanism (option 2).** The same three mechanisms with a fuller legend (discard and respawn, fork-at-commit, fork-by-K). *We are choosing between this and option 1 above.*](../assets/fig-mech-usecases.png)
 
 ### Multi-Agent Runtime Intervention
 

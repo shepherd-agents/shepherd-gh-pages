@@ -18,6 +18,7 @@ links:
   - { label: "Paper",    url: "https://arxiv.org/abs/2605.10913" }
   - { label: "alphaXiv", url: "https://www.alphaxiv.org/abs/2605.10913" }
   - { label: "Code",     url: "https://github.com/dcx/poc-crank-v2" }
+  - { label: "Docs",     url: "https://docs.shepherd-agents.ai/" }
   - { label: "X Thread (soon)" }
 ---
 
@@ -324,7 +325,7 @@ shepherd revert 4
 
 `shepherd revert 4` puts the agent and its filesystem back to commit 4, byte for byte, and drops the regression at commit 5. You are back to green.
 
-📦 [**PyPI**](https://pypi.org/project/shepherd-ai/0.0.1/)  |  💻 [**Code**](https://github.com/dcx/poc-crank-v2)
+📦 [**PyPI**](https://pypi.org/project/shepherd-ai/0.0.1/)  |  💻 [**Code**](https://github.com/dcx/poc-crank-v2)  |  📖 [**Docs**](https://docs.shepherd-agents.ai/)
 
 It is the same handful of operations over a run you can fork and rewind. We are releasing Shepherd so you can build the meta-agents we have not thought of yet.
 

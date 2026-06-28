@@ -59,7 +59,7 @@ Existing runtimes each give you a piece. OpenHands exposes a session's event str
 
 *● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.*
 
-## The idea: agents all the way up
+## The idea: your harness is just another agent
 
 Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
 
@@ -67,12 +67,12 @@ The piece that matters is the **higher-order function**, one that takes another 
 
 The system has four parts:
 
-| Part | What it is |
-|---|---|
-| **Task** | An agent, written as a plain Python function with an `@shp.task` decorator. |
-| **Effect** | One thing an agent does. It records the intent (the call it is about to make) before the result, leaving room for a meta-agent to step in between the two. |
-| **Scope** | Where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step. |
-| **Trace** | The run's history: a commit graph where any past state is reachable by its hash. |
+| Part | What it is | In FP terms |
+|---|---|---|
+| **Task** | An agent, written as a plain Python function with an `@shp.task` decorator. | a typed function |
+| **Effect** | One thing an agent does. It records the intent (the call it is about to make) before the result, leaving room for a meta-agent to step in between the two. | an algebraic effect |
+| **Scope** | Where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step. | a scoped effect handler |
+| **Trace** | The run's history: a commit graph where any past state is reachable by its hash. | a persistent data structure |
 
 To hand a run to a higher-order agent, the run itself has to be a value: something you can hold, copy, and rewind, not a transcript you read after the fact. So :shepherd: records every action an agent takes, a model call, a tool call, a file write, as a commit in a Git-like trace, and a meta-agent operates on that run the way you operate on a repo:
 
@@ -105,11 +105,25 @@ with shp.workspace(model=claude("sonnet-4-5")):
 
 **The life of an effect.** The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the *intent* as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its *outcome* is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).
 
-## System performance: forking, observing, and replaying
+<details markdown="1">
+<summary>The functional-programming view</summary>
 
-Everything below forks constantly. A supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. The fork operation sits on the critical path, so the substrate has to make it cheap. This section describes how we built it and how we measured it.
+The four parts are a port of standard functional-programming machinery, which is where the guarantees come from:
 
-The mechanism is to avoid copying the filesystem. Each :shepherd: scope is an OverlayFS mount, and `scope.fork()` adds a writable layer over the shared read-only ones. Nothing is copied up front: a branch pays only for the bytes it changes (copy-on-write), and `revert` discards the writable layer.
+- A **task** is a typed function: declared inputs and outputs, so a meta-agent can be typed over another agent's run.
+- An **effect** is an algebraic effect: the intent is a typed event recorded before the action runs, and a handler can intercept it in between. This is what lets a supervisor observe without perturbing and act before damage lands.
+- A **scope** is a scoped effect handler over a region of execution: entering it forks a branch, leaving it merges the branch back or discards it.
+- A **trace** is a persistent (immutable) data structure: every past state stays reachable by its hash, so replay restores it rather than rebuilding it.
+
+The deterministic core of this calculus is mechanized in Lean, which lets us state the replay and revert guarantees precisely instead of by convention.
+
+</details>
+
+## System overhead: are the operations cheap enough?
+
+A meta-agent leans on the same handful of operations: it observes a worker, forks it to try an alternative, reverts on failure, and replays a branch against the model's cache. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the three that sit on the critical path.
+
+The one that has to be cheapest is the fork, since the meta-agents below fork constantly: a supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. The mechanism is to avoid copying the filesystem. Each :shepherd: scope is an OverlayFS mount, and `scope.fork()` adds a writable layer over the shared read-only ones. Nothing is copied up front: a branch pays only for the bytes it changes (copy-on-write), and `revert` discards the writable layer.
 
 ### Setup
 
@@ -164,7 +178,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 ![**Figure 3.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
-> Two parallel agents that sabotage each other are a known failure. A supervisor that watches both effect streams and steps in, written as an ordinary agent rather than a change to the framework, recovers almost all of the gap.
+> A meta-agent supervises two parallel coding agents well because it observes both effect streams without perturbing them and acts in the gap between intent and result. It is an ordinary agent on the substrate, and it recovers 91% of the coordination gap that peer-to-peer messaging leaves open.
 
 ### Counterfactual Meta-Optimization
 
@@ -188,7 +202,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 ![**Figure 4.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
-> Because a fork keeps the byte-identical prefix, CRO judges every edit against a fixed baseline instead of a noisy from-scratch re-run. That is both cheaper and more honest than re-optimizing from zero.
+> A meta-agent optimizes a workflow well because byte-identical replay lets it score every edit against a fixed baseline instead of a noisy from-scratch re-run. That makes CRO cheaper and more honest at once, and it wins on 4 of 5 benchmarks.
 
 ### Meta-Agent-Guided Tree RL
 
@@ -210,7 +224,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Out-of-distribution transfer to TerminalBench 2.0, avg@5 (%); +gain is vs flat GRPO. The Qwen3.5 +5.2 clears its ~3.9 to 4.1 std comfortably.*^[The Nemotron +3.4 only just edges past its ~3.2 to 3.4 std, a slim margin rather than a clean separation.]
 
 > [!insight]
-> The budget, recipe, and task set are all held fixed. The only change is forking sibling branches mid-rollout to read off per-step advantage, and it buys a few points on a hard OOD benchmark.
+> A meta-agent trains a policy better because cheap mid-rollout forking turns one bit of final reward into a per-step advantage signal. With budget, recipe, and task set held fixed, that buys +5.2 points on a hard out-of-distribution benchmark.
 
 ## FAQ
 

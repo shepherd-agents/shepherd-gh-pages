@@ -126,11 +126,14 @@ figure{margin:26px 0;max-width:var(--col)}
 figure img{display:block;width:100%;height:auto}
 figcaption{font-size:.86rem;color:var(--muted);margin-top:8px;line-height:1.5}
 
-/* ---- tables ---- */
+/* ---- tables (tinted header + zebra rows + highlighted Shepherd row) ---- */
 table{border-collapse:collapse;width:100%;max-width:var(--col);margin:22px 0;font-size:.92rem}
 th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
-thead th{border-bottom:2px solid #d4d8de;font-weight:700}
-tbody tr:hover{background:#fafbfc}
+thead th{background:#e9f4f2;color:#0a4a44;border-bottom:2px solid var(--accent);font-weight:700}
+tbody tr:nth-child(even){background:#f7faf9}
+tbody tr:hover{background:#eef6f4}
+tbody tr:has(.brand:not(.brand--worker)){background:#e6f6ee}            /* our-method row (Shepherd/CRO/Tree-GRPO) */
+tbody tr:has(.brand:not(.brand--worker)):hover{background:#dcf2e6}
 
 /* ---- callouts ---- */
 .callout{border-radius:10px;padding:16px 20px;margin:24px 0;max-width:var(--col)}

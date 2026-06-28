@@ -23,34 +23,23 @@ links:
 ---
 
 > [!tldr]
-> *(TL;DR option A: motivation-first. We are deciding between this and option B below: feedback welcome.)*
->
 > The best way through a hard agent task, increasingly, is to put another agent in charge of it: a **meta-agent** that supervises parallel workers, repairs a failed run, or optimizes a workflow. But meta-agents are painful to build. Today's runtimes expose only transcripts and final states, so each one re-implements the same plumbing to observe, fork, and replay the agent underneath.
 >
 > :shepherd: fixes this at the runtime, borrowing one idea from functional programming: if an agent is a function, a meta-agent is just a function that takes another agent's *run* as its argument. To make a run a value you can pass around, :shepherd: records every agent-environment interaction as a typed event in a Git-like trace, where any past state can be observed, forked, and replayed cheaply. A meta-agent becomes a plain `@task`, with no privileged control loop to reinvent.
 >
 > We build three meta-agents on it. A live supervisor closes **91%** of the coordination gap on CooperBench (28.8% to 54.7%). A counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks, in less wall-clock every time. Meta-agent-guided Tree-GRPO adds **+5.2 points** over flat GRPO on Qwen3.5-35B-A3B. Underneath, a fork that carries an agent's whole filesystem costs about 140 ms, roughly **5x** cheaper than `docker commit`, and the core is checked in Lean.
 
-> [!tldr]
-> *(TL;DR option B: punchiest. We are deciding between this and option A above: feedback welcome.)*
->
-> A **meta-agent** is an agent that runs other agents: it supervises them, repairs them, or trains them. This is how the hardest agent tasks get done now, and it is harder than it should be, because the runtime only hands you logs once the run is over.
->
-> :shepherd: makes a run a thing you can hold. Drawing on functional programming, it treats an agent as a function and records its execution as a typed, Git-like trace you can fork and replay. A meta-agent is then just a function over another agent's run, written as a plain `@task` with no control loop or base class to reimplement.
->
-> Three meta-agents, one substrate: a live supervisor closes **91%** of CooperBench's coordination gap (28.8% to 54.7%); a counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks at lower wall-clock; Tree-GRPO adds **+5.2 points** over flat GRPO. Forks cost about 140 ms (**5x** under `docker commit`), and the core is verified in Lean.
-
 ![**Figure 1.** One substrate, three meta-agents. *Top:* a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2 points on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
 ## Motivation
 
-The best way to get agents through a hard task, increasingly, is to put another agent in charge of it. These **meta-agents**, higher-order agents that operate on other agents and their execution, are becoming more important to be effective on using agentic systems: coordinating parallel workers, halting a risky action before it runs, repairing a failed run.
+Look at how the strongest agentic systems get built now. A coordinator runs parallel coding workers and reconciles their edits before they clash; an optimizer replays a failed run and rewrites the step that broke it; a trainer forks a rollout at a decisive turn to learn which choice mattered. Each is a **meta-agent**: a higher-order agent that operates on another agent and its execution, and they are becoming central to getting real work out of agentic systems.
 
-Each of these jobs shares the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
+Every one of those jobs needs the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
 
-Existing runtimes each give you partially: OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data.
+Existing runtimes each give you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data.
 
-| Method | Intercept execution | Fork Agent + Environment | Revert to past state | Modify behavior |
+| Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
 |---|:---:|:---:|:---:|:---:|
 | BranchFS | ○ | ◐ | ◐ | ○ |
 | Docker | ○ | ◐ | ◐ | ○ |
@@ -157,7 +146,7 @@ Three meta-agents on one :shepherd: substrate, at three moments in an agent's li
 | After it finishes | Counterfactual Meta-Optimization | byte-for-byte replay |
 | While you train it | Meta-Agent-Guided Tree RL | cheap forking |
 
-![**Mechanism (option 1).** How each meta-agent acts on the execution trace: (a) Multi-Agent Runtime Intervention observes two workers and discards the stuck one; (b) Counterfactual Meta-Optimization forks at the edited commit and replays only the suffix; (c) Meta-Agent-Guided Tree RL forks K sibling rollouts at a chosen turn. *We are choosing between this and option 2 below.*](../assets/fig-mech-combined.png)
+![**Figure 2.** How each meta-agent acts on the execution trace. (a) Multi-Agent Runtime Intervention observes two workers and intervenes before a conflict lands; (b) Counterfactual Meta-Optimization forks at the edited commit and replays only the suffix; (c) Meta-Agent-Guided Tree RL forks K sibling rollouts at a chosen turn.](../assets/fig-mechanisms.png)
 
 ### Multi-Agent Runtime Intervention
 
@@ -169,11 +158,11 @@ CooperBench documents an uncomfortable fact: two coding agents working in parall
 
 **Results.** The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), the Opus meta-agent recovers **91%** of the coordination gap, at 1 to 5 minutes of supervision overhead per pair.^[A proof of existence that the substrate enables live supervision, not a like-for-like compute win.]
 
-![**Figure 2.** A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.](../assets/fig-supervision.png)
+![**Figure 3.** A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.](../assets/fig-supervision.png)
 
 The two supervisors reach for different tools. Counting pairs where each action fires at least once, the Opus meta-agent injects on 39.2% of pairs, hands off on 31.5%, and discards rarely (4.6%): it prefers to nudge and to reuse work. The weaker Sonnet supervisor intervenes less (26.4% inject, 18.7% handoff) but pulls the kill switch more often (7.9% discard), which reads as a less capable supervisor leaning on the blunt action when the precise ones are harder to land.
 
-![**Figure 3.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
+![**Figure 4.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
 > A meta-agent supervises two parallel coding agents well because it observes both effect streams without perturbing them and acts in the gap between intent and result. It is an ordinary agent on the substrate, and it recovers 91% of the coordination gap that peer-to-peer messaging leaves open.
@@ -197,7 +186,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 
 *Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4 points) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.*
 
-![**Figure 4.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
+![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
 > A meta-agent optimizes a workflow well because byte-identical replay lets it score every edit against a fixed baseline instead of a noisy from-scratch re-run. That makes CRO cheaper and more honest at once, and it wins on 4 of 5 benchmarks.
@@ -210,7 +199,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 
 **Why the forks help.** Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, recovered from the same one-bit reward. And because forked branches reuse the byte-identical prefix, each sibling pays only for its own suffix while the shared prefix resolves from the KV cache (the KV-cache result above). A K-way tree therefore costs about K extra suffixes, not K full rollouts.
 
-![**Figure 5.** Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.](../assets/fig-treegrpo.png)
+![**Figure 6.** Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.](../assets/fig-treegrpo.png)
 
 **Results.** Out-of-distribution transfer to TerminalBench 2.0 (avg@5 over 89 tasks, 5 seeds), a suite never seen in training:
 

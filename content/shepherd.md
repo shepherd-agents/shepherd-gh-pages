@@ -22,13 +22,24 @@ links:
 ---
 
 > [!tldr]
-> A meta-agent watches, steers, or repairs other agents. Today it rebuilds everything by hand: read the transcripts, snapshot the environment, write one-off code to catch a bad write before it lands. The runtime hands it fragments, never the whole run.
+> *(TL;DR option A: motivation-first. We are deciding between this and option B below: feedback welcome.)*
 >
-> :shepherd: records every agent-environment interaction as a typed event in a Git-like trace, where any past state can be forked and replayed cheaply. That turns a meta-agent into a plain `@shp.task` that takes another agent's run as its argument. Deep Research put an agent *inside* the harness; :shepherd: makes the harness *out of* agents.
+> The best way through a hard agent task, increasingly, is to put another agent in charge of it: a **meta-agent** that supervises parallel workers, repairs a failed run, or optimizes a workflow. But meta-agents are painful to build. Today's runtimes expose only transcripts and final states, so each one re-implements the same plumbing to observe, fork, and replay the agent underneath.
 >
-> We build three meta-agents on it. A live supervisor closes **91%** of the coordination gap on CooperBench, lifting pair pass rate from 28.8% to 54.7%. A counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks, in less wall-clock every time. Meta-agent-guided Tree-GRPO adds **+5.2 points** over flat GRPO on Qwen3.5-35B-A3B (and +3.4 on the larger Nemotron-3-Super-120B-A12B). A fork that carries its whole filesystem costs 134 to 143 ms, about **5x** cheaper than `docker commit`, and the core correctness argument is checked in Lean.
+> :shepherd: fixes this at the runtime, borrowing one idea from functional programming: if an agent is a function, a meta-agent is just a function that takes another agent's *run* as its argument. To make a run a value you can pass around, :shepherd: records every agent-environment interaction as a typed event in a Git-like trace, where any past state can be observed, forked, and replayed cheaply. A meta-agent becomes a plain `@shp.task`, with no privileged control loop to reinvent.
+>
+> We build three meta-agents on it. A live supervisor closes **91%** of the coordination gap on CooperBench (28.8% to 54.7%). A counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks, in less wall-clock every time. Meta-agent-guided Tree-GRPO adds **+5.2 points** over flat GRPO on Qwen3.5-35B-A3B. Underneath, a fork that carries an agent's whole filesystem costs about 140 ms, roughly **5x** cheaper than `docker commit`, and the core is checked in Lean.
 
-![**Figure 1.** Three meta-agents on one Shepherd substrate. (a) Multi-Agent Runtime Intervention: a supervisor watches two workers and resolves a conflict before it lands. (b) Counterfactual Meta-Optimization: an optimizer forks a finished run at the first changed step and replays it against a fixed baseline. (c) Meta-Agent-Guided Tree RL: a trainer forks K sibling rollouts mid-trajectory to read off per-step advantage.](../assets/fig-teaser.png)
+> [!tldr]
+> *(TL;DR option B: punchiest. We are deciding between this and option A above: feedback welcome.)*
+>
+> A **meta-agent** is an agent that runs other agents: it supervises them, repairs them, or trains them. This is how the hardest agent tasks get done now, and it is harder than it should be, because the runtime only hands you logs once the run is over.
+>
+> :shepherd: makes a run a thing you can hold. Drawing on functional programming, it treats an agent as a function and records its execution as a typed, Git-like trace you can fork and replay. A meta-agent is then just a function over another agent's run, written as a plain `@shp.task` with no control loop or base class to reimplement.
+>
+> Three meta-agents, one substrate: a live supervisor closes **91%** of CooperBench's coordination gap (28.8% to 54.7%); a counterfactual optimizer beats GEPA and MetaHarness on **4 of 5** benchmarks at lower wall-clock; Tree-GRPO adds **+5.2 points** over flat GRPO. Forks cost about 140 ms (**5x** under `docker commit`), and the core is verified in Lean.
+
+![**Figure 1.** One substrate, three meta-agents. *Top:* a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2 points on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
 ## Motivation
 
@@ -81,6 +92,7 @@ from shepherd.providers import claude
 @shp.task
 def implement(repo, feature) -> str:
     "Implement the feature in the repo."
+
 @shp.task
 def oversee(worker) -> str:
     "Watch the worker. If its tests fail, revert to the last green commit and retry."

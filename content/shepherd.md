@@ -218,7 +218,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 <details markdown="1">
 <summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
 
-The copy-on-write fork is built on Linux OverlayFS, so the substrate runs natively on Linux. On macOS and Windows you run it through a Linux sandbox, which is also how you get a clean, reproducible environment per agent. First-class macOS and Windows support is on the roadmap; see the [docs](https://docs.shepherd-agents.ai/) for current status.
+Shepherd currently supports both Linux and MacOS. For Windows we will suggest using WSL2 for now. First-class Windows support is on the roadmap; see the [docs](https://docs.shepherd-agents.ai/) for current status.
 
 </details>
 
@@ -232,35 +232,21 @@ Shepherd is its own lightweight, multi-provider framework: you write agents, and
 <details markdown="1">
 <summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary>
 
-It wraps it. Shepherd adds a copy-on-write layer over the container your agent already runs in, with backends for E2B, Modal, and Daytona behind one `Device` interface. The fork couples the agent's process and its filesystem in a single step. It is open source and self-hostable, with no hosted-service lock-in.
+It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support to backends like E2B, Modal, and Daytona, behind one `Device` interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.
 
 </details>
 
 <details markdown="1">
 <summary>What does a fork capture?</summary>
 
-Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one copy-on-write step. Replay the branch and the agent picks up exactly where it left off.
-
-</details>
-
-<details markdown="1">
-<summary>If a meta-agent reverts a run, what about the email it already sent or the card it charged?</summary>
-
-Shepherd tags every effect by reversibility: filesystem and sandbox state is **reversible** (rolled back natively), database-style writes are **compensable** (rolled back through a handler you supply), and genuinely **irreversible** effects, like model calls, payments, and emails, are never silently undone. The trick is that an action's *intent* and its *outcome* are separate events, so a meta-agent can see the intent to send and deny it before it fires. You gate irreversible actions up front rather than try to claw them back; whatever has already gone out is recorded for audit, not recalled.
+Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one step. Replay the branch and the agent picks up exactly where it left off.
 
 </details>
 
 <details markdown="1">
 <summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary>
 
-A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run or re-paid for. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.
-
-</details>
-
-<details markdown="1">
-<summary>If the supervisor is also an LLM, doesn't it hallucinate too?</summary>
-
-The substrate itself is deterministic mechanism: it records, forks, reverts, and enforces permission gates, and makes no agentic decisions. The judgment lives in some agent, which can be an LLM or a deterministic check you write. You choose which actions need a hard gate and which can run on a model's discretion.
+A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.
 
 </details>
 
@@ -272,11 +258,11 @@ Today Shepherd is built for research, and we are actively moving it toward produ
 </details>
 
 <details markdown="1">
-<summary>Why "Shepherd," and why a sheep?</summary>
+<summary>Why :shepherd:? and why a sheep?</summary>
 
 <p align="center"><img src="../assets/logo-shepherd.png" alt="Shepherd logo" height="96"></p>
 
-Because a shepherd is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls the agent out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.
+A :shepherd: is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls the agent out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.
 
 </details>
 

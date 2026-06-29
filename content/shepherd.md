@@ -53,7 +53,7 @@ Existing runtimes each give you a piece. OpenHands exposes a session's event str
 
 Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
 
-The piece that matters is the **higher-order function**, one that takes another function as an argument. An agent whose argument is another agent's run is exactly that, and we call it a meta-agent. Do it once more, a meta-agent over a meta-agent, and you get the same construction one level up: agents all the way up.
+The piece that matters is the **higher-order function**, one that takes another function as an argument. An agent whose argument is another agent's run is exactly that, and we call it a meta-agent.
 
 The system has four parts:
 

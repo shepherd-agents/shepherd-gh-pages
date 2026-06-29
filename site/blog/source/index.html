@@ -27,15 +27,15 @@
 <hr>
 <aside class="callout callout--tldr">
 
-<p>As agents take on more complex tasks, <strong>meta-agents</strong> are becoming increasingly important: higher-order agents that create, operate on, and manage other agents. But today, writing a meta-agent means managing execution state by hand, reconstructing it from LLM transcripts and final environment state.</p>
-<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> draws on functional programming to keep an agent's whole execution as a reversible, Git-like trace: one you can branch, roll back to any previous state, and replay. A meta-agent then simply becomes an agent that operates on another agent's definition and trace.</p>
-<p>We build three meta-agents on it. <strong>(1)</strong> A live supervisor closes <strong>91%</strong> of the coordination gap on CooperBench, from 28.8% to 54.7%. <strong>(2)</strong> A counterfactual optimizer beats GEPA and MetaHarness, by up to <strong>+11%</strong> on LiveCodeBench and with less runtime. <strong>(3)</strong> Meta-agent-guided Tree-GRPO adds <strong>+5.2%</strong> over flat GRPO on Terminal-Bench 2.0. Underneath, a whole-filesystem fork costs about 140 ms, roughly <strong>5x</strong> cheaper than <code>docker commit</code>.</p>
+<p>As agents take on more complex tasks, they increasingly rely on <strong>meta-agents</strong>: higher-order agents that create, operate on, and manage other agents mid-task. Yet building a meta-agent is challenging today: developers have to reconstruct agents' execution traces from raw LLM transcripts and final environment states, then manage them by hand.</p>
+<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is a runtime substrate that makes this easy. Drawing on functional programming, it keeps an agent's whole execution as a reversible, Git-like trace that one can branch, roll back, and replay. A meta-agent can then inspect and transform another agent's trace cheaply: a full filesystem revert and fork takes ~140ms regardless of image size, <strong>5x</strong> faster than <code>docker commit</code>.</p>
+<p>We demonstrate three meta-agents built on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates conflicts between two parallel agents, lifting pair-coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> proposes targeted edits to repair agent workflow, outperforming MetaHarness by <strong>+27.5%</strong> on LiveCodeBench with <strong>~46%</strong> less wall-clock time. <strong>(3)</strong> A <strong>training meta-agent</strong> selects fork points in RL rollouts to enable Tree-GRPO, improving <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0. Beyond these examples, <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> opens up a broader space of meta-agent use cases in a principled and efficient way.</p>
 <p><strong>Resources</strong> &nbsp; <img class="rsrc" src="../../assets/logo-shepherd.png" alt=""><a href="https://shepherd-agents.ai/">Homepage</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-arxiv.svg" alt=""><a href="https://arxiv.org/abs/2605.10913">Paper</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-alphaxiv.png" alt=""><a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-github.svg" alt=""><a href="https://github.com/dcx/poc-crank-v2">Code</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-docs.svg" alt=""><a href="https://docs.shepherd-agents.ai/">Docs</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-x.svg" alt="">Tweet</p>
 </aside>
 
 <figure>
-<img src="../../assets/fig-teaser.png" alt="Figure 1. Three meta-agents built on Shepherd, three examples of many. Top: a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. Bottom: headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2% on Terminal-Bench 2.0.">
-<figcaption><strong>Figure 1.</strong> Three meta-agents built on Shepherd, three examples of many. <em>Top:</em> a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. <em>Bottom:</em> headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2% on Terminal-Bench 2.0.</figcaption>
+<img src="../../assets/fig-teaser.png" alt="Figure 1. Three meta-agents built on Shepherd, three examples of many. Top: a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. Bottom: headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.">
+<figcaption><strong>Figure 1.</strong> Three meta-agents built on Shepherd, three examples of many. <em>Top:</em> a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. <em>Bottom:</em> headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.</figcaption>
 </figure>
 
 <h1 id="motivation">Motivation</h1>
@@ -46,47 +46,47 @@
 <thead>
 <tr>
 <th>Method</th>
-<th align="center">Intercept execution</th>
-<th align="center">Fork agent + env</th>
-<th align="center">Revert to past state</th>
-<th align="center">Modify behavior</th>
+<th style="text-align: center;">Intercept execution</th>
+<th style="text-align: center;">Fork agent + env</th>
+<th style="text-align: center;">Revert to past state</th>
+<th style="text-align: center;">Modify behavior</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>BranchFS</td>
-<td align="center">○</td>
-<td align="center">◐</td>
-<td align="center">◐</td>
-<td align="center">○</td>
+<td style="text-align: center;">○</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">○</td>
 </tr>
 <tr>
 <td>Docker</td>
-<td align="center">○</td>
-<td align="center">◐</td>
-<td align="center">◐</td>
-<td align="center">○</td>
+<td style="text-align: center;">○</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">○</td>
 </tr>
 <tr>
 <td>OpenHands</td>
-<td align="center">◐</td>
-<td align="center">◐</td>
-<td align="center">◐</td>
-<td align="center">○</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">○</td>
 </tr>
 <tr>
 <td>AgentGit</td>
-<td align="center">○</td>
-<td align="center">◐</td>
-<td align="center">◐</td>
-<td align="center">○</td>
+<td style="text-align: center;">○</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">◐</td>
+<td style="text-align: center;">○</td>
 </tr>
 <tr>
 <td><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span></td>
-<td align="center">●</td>
-<td align="center">●</td>
-<td align="center">●</td>
-<td align="center">●</td>
+<td style="text-align: center;">●</td>
+<td style="text-align: center;">●</td>
+<td style="text-align: center;">●</td>
+<td style="text-align: center;">●</td>
 </tr>
 </tbody>
 </table>
@@ -171,7 +171,7 @@
 <p><code>oversee</code> watches the effect stream without disturbing it, pushes effects in to intervene, checks out an earlier commit to rewind, and forks a scope to try something else. Because it is an agent like any other, a third agent can supervise the supervisor by taking <code>oversee</code>'s run as its input.</p>
 <p><strong>The life of an effect.</strong> The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the <em>intent</em> as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its <em>outcome</em> is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).</p>
 <details>
-<p><summary>The functional-programming view</summary></p>
+<summary>The functional-programming view</summary>
 <p>The mapping in the table above is exact, and the properties a meta-agent relies on fall straight out of it. Algebraic effects are why observation never perturbs the worker and interception is possible at all: the intent exists as a value on the stream before the action runs. Scoped handlers are why a fork is a clean, nestable branch that merges back or is discarded as a unit. A persistent, content-addressed trace is why any past state replays byte for byte instead of being rebuilt from a log.</p>
 <p>The deterministic core of this calculus is mechanized in Lean, which lets us state the replay and revert guarantees precisely instead of by convention.</p>
 </details>
@@ -270,7 +270,7 @@
 <p><strong>Setup.</strong> Each task is a pair of related features in one repository. Two Claude Haiku 4.5 <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">worker</span>s run in forked scopes, one feature each, and a pair counts as solved only when both features pass their own pytest suite. We compare four conditions over 479 structurally conflicting pairs: one agent doing both features in sequence (the solo single-agent ceiling), two workers in parallel with no coordination, two workers passing peer-to-peer messages (the coop baseline), and two workers under a meta-agent (ours). The comparison that matters is ours against coop: a win there means supervising through the effect stream beats letting the workers message each other directly.</p>
 <p><strong>The intervention loop.</strong> The meta-agent (Claude Sonnet 4.6, or the stronger Opus 4.7) subscribes to both workers' effect streams. Watching is a read-side view of the trace, so it adds nothing to either worker's context: the zero-token result from the overhead section.</p>
 <p>Every few seconds it looks at what each worker is about to do and picks one of three actions: <code>inject</code> a note into a worker's context to redirect it, <code>handoff</code> one worker's finished scope to the other so the second builds on the first instead of colliding with it, or <code>discard</code> a worker that has wedged itself and restart it from a clean fork. None of this touches the workers' code or the framework: the supervisor is just an ordinary agent whose input is the pair's run.</p>
-<p><strong>Results.</strong> The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), the Opus meta-agent recovers <strong>91%</strong> of the coordination gap, at 1 to 5 minutes of supervision overhead per pair.<span class="sn"><input type="checkbox" id="sn5" class="sn-toggle"><label for="sn5" class="sn-ref">5</label><span class="sn-body"><span class="sn-num">5.</span> A proof of existence that the substrate enables live supervision.</span></span></p>
+<p><strong>Results.</strong> The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%, a <strong>1.9x</strong> lift over the coop baseline. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), that recovers <strong>91%</strong> of the coordination gap to the solo ceiling, at 1 to 5 minutes of supervision overhead per pair.<span class="sn"><input type="checkbox" id="sn5" class="sn-toggle"><label for="sn5" class="sn-ref">5</label><span class="sn-body"><span class="sn-num">5.</span> A proof of existence that the substrate enables live supervision.</span></span></p>
 <figure>
 <img src="../../assets/fig-supervision.png" alt="Figure 3. A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.">
 <figcaption><strong>Figure 3.</strong> A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.</figcaption>
@@ -284,14 +284,14 @@
 
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Meta-agents in <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> close <strong>91%</strong> of CooperBench's coordination gap: they supervise parallel agents without perturbing them, and add only minimal runtime overhead.</p>
+<p>Meta-agents in <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> lift CooperBench's pair pass rate <strong>1.9x</strong> (28.8% → 54.7%), closing <strong>91%</strong> of the coordination gap: they supervise parallel agents without perturbing them, and add only minimal runtime overhead.</p>
 </aside>
 
 <h4 id="counterfactual-meta-optimization">Counterfactual Meta-Optimization</h4>
 <p>You tweak one prompt in a ten-step research workflow and the score goes up two points. Was that your edit, or just a luckier roll of the dice? Re-run it and you'll get a third number. Optimizers that re-test every candidate with a fresh run from scratch spend most of their budget fighting that noise.</p>
 <p><strong>Setup.</strong> We compare counterfactual replay (CRO) against two optimizers, <a href="https://arxiv.org/abs/2507.19457">GEPA</a> and <a href="https://arxiv.org/abs/2603.28052">MetaHarness</a>, on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and Terminal-Bench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.</p>
 <p><strong>How CRO works.</strong> CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache (the KV-cache result above), so each evaluation stays cheap.</p>
-<p><strong>Results.</strong> CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound Terminal-Bench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 4% (31.2 to 35.2) at the least wall-clock of any method.</p>
+<p><strong>Results.</strong> CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound Terminal-Bench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 12.8% (31.2 to 35.2) at the least wall-clock of any method.</p>
 <table>
 <thead>
 <tr>
@@ -338,7 +338,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4%) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.</em></p>
+<p><em>Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+12.8%) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.</em></p>
 <figure>
 <img src="../../assets/fig-cro.png" alt="Figure 5. Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.">
 <figcaption><strong>Figure 5.</strong> Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.</figcaption>
@@ -373,49 +373,49 @@
 <td>Qwen3.5-35B-A3B</td>
 <td>26.1±4.21</td>
 <td>34.2±4.05</td>
-<td><strong>39.4±3.87</strong> (+5.2)</td>
+<td><strong>39.4±3.87</strong> (+15.2%)</td>
 </tr>
 <tr>
 <td>Nemotron-3-Super-120B-A12B</td>
 <td>30.3±3.62</td>
 <td>33.8±3.41</td>
-<td><strong>37.2±3.19</strong> (+3.4)</td>
+<td><strong>37.2±3.19</strong> (+10.1%)</td>
 </tr>
 </tbody>
 </table>
-<p><em>Terminal-Bench 2.0 performance, avg@5 (%); +gain is vs flat GRPO.</em></p>
+<p><em>Terminal-Bench 2.0 performance, avg@5 (%); gain is relative improvement over flat GRPO.</em></p>
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds <strong>+5.2%</strong> with Qwen3.5-35B-A3B on Terminal-Bench 2.0.</p>
+<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds <strong>+15.2%</strong> with Qwen3.5-35B-A3B on Terminal-Bench 2.0.</p>
 </aside>
 
 <h1 id="faq">FAQ</h1>
 <details>
-<p><summary>Does Shepherd run on Linux, macOS, and Windows?</summary></p>
+<summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
 <p>Shepherd currently supports both Linux and macOS. For Windows, we suggest WSL2 for now. First-class Windows support is on the roadmap; see the <a href="https://docs.shepherd-agents.ai/">docs</a> for current status.</p>
 </details>
 <details>
-<p><summary>Do I have to rewrite my agent? Does it work with my model?</summary></p>
+<summary>Do I have to rewrite my agent? Does it work with my model?</summary>
 <p>Shepherd is its own lightweight, multi-provider framework: you write agents, and meta-agents, as typed <code>@task</code> functions and swap the model behind a provider (Claude by default). A meta-agent then supervises any task on the substrate without that task knowing it is watched. It is the runtime your agents run on: you build on it directly.</p>
 </details>
 <details>
-<p><summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary></p>
+<summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary>
 <p>It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support for backends like E2B, Modal, and Daytona, behind one <code>Device</code> interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.</p>
 </details>
 <details>
-<p><summary>What does a fork capture?</summary></p>
+<summary>What does a fork capture?</summary>
 <p>Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one step. Replay the branch and the agent picks up exactly where it left off.</p>
 </details>
 <details>
-<p><summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary></p>
+<summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary>
 <p>A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.</p>
 </details>
 <details>
-<p><summary>Is this production-ready, or a research substrate?</summary></p>
+<summary>Is this production-ready, or a research substrate?</summary>
 <p>Today Shepherd is built for research, and we are actively moving it toward production. The core is small and its correctness argument is checked in Lean, and we are maintaining the framework and hardening it with each release. You can build on it now, and it will keep getting more production-ready over time.</p>
 </details>
 <details>
-<p><summary>Why <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>? and why a sheep?</summary></p>
+<summary>Why <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>? and why a sheep?</summary>
 <p align="center"><img src="../../assets/logo-shepherd.png" alt="Shepherd logo" height="96"></p>
 <p>A <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls the agent out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.</p>
 </details>

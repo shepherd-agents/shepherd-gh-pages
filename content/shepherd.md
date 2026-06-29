@@ -154,7 +154,9 @@ Here are three meta-agents we built on :shepherd:, at three moments in an agent'
 
 **Setup.** Each task is a pair of related features in one repository. Two Claude Haiku 4.5 :worker:s run in forked scopes, one feature each, and a pair counts as solved only when both features pass their own pytest suite. We compare four conditions over 479 structurally conflicting pairs: one agent doing both features in sequence (the solo single-agent ceiling), two workers in parallel with no coordination, two workers passing peer-to-peer messages (the coop baseline), and two workers under a meta-agent (ours). The comparison that matters is ours against coop: a win there means supervising through the effect stream beats letting the workers message each other directly.
 
-**The intervention loop.** The meta-agent, Claude Sonnet 4.6 or the stronger Opus 4.7, subscribes to both workers' effect streams. Observation is a read-side view of the trace, so watching both workers adds nothing to their context (the zero-token result from the overhead section). Every few seconds the meta-agent inspects what each worker is about to do and picks one of three actions: `inject` a note into a worker's context to redirect it, `handoff` one worker's finished scope to the other as its starting point so the second builds on the first instead of colliding with it, or `discard` a worker that has wedged itself and restart it from a clean fork. None of this touches the workers' code or the framework. The supervisor is an ordinary agent whose input is the pair's run.
+**The intervention loop.** The meta-agent (Claude Sonnet 4.6, or the stronger Opus 4.7) subscribes to both workers' effect streams. Watching is a read-side view of the trace, so it adds nothing to either worker's context: the zero-token result from the overhead section.
+
+Every few seconds it looks at what each worker is about to do and picks one of three actions: `inject` a note into a worker's context to redirect it, `handoff` one worker's finished scope to the other so the second builds on the first instead of colliding with it, or `discard` a worker that has wedged itself and restart it from a clean fork. None of this touches the workers' code or the framework: the supervisor is just an ordinary agent whose input is the pair's run.
 
 **Results.** The coop baseline reaches 28.8%, well short of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet supervisor lifts the pass rate to 45.3% and an Opus supervisor to 54.7%. By the gap arithmetic, (54.7 - 28.8) / (57.2 - 28.8), the Opus meta-agent recovers **91%** of the coordination gap, at 1 to 5 minutes of supervision overhead per pair.^[A proof of existence that the substrate enables live supervision.]
 
@@ -300,7 +302,7 @@ shepherd revert 4
 
 📦 [**PyPI**](https://pypi.org/project/shepherd-ai/0.0.1/)  |  💻 [**Code**](https://github.com/dcx/poc-crank-v2)  |  📖 [**Docs**](https://docs.shepherd-agents.ai/)
 
-It is the same handful of operations over a run you can fork and rewind. We are releasing Shepherd so you can build the meta-agents we have not thought of yet.
+It is the same handful of operations over a run you can fork and rewind. We are releasing Shepherd open source so you can build the meta-agents we haven't thought of yet, and we'd genuinely love to see what you make.
 
 # Acknowledgments
 

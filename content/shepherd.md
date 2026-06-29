@@ -23,7 +23,9 @@ links:
 ---
 
 > [!tldr]
-> Meta-agents, the agents that supervise, repair, or optimize other agents, are how the hardest agent tasks get done now, but they are painful to build because runtimes expose only transcripts and final states. :shepherd: fixes this in the runtime with one idea from functional programming: an agent is a function, so a meta-agent is a function that takes another agent's *run* as its argument. To make a run a value you can pass around, :shepherd: records every agent-environment interaction as a typed event in a Git-like trace where any past state can be observed, forked, and replayed cheaply, so a meta-agent is a plain `@task`.
+> As agents take on more complex tasks, **meta-agents** are becoming increasingly important: higher-order agents that create, operate on, and manage other agents. But today, writing a meta-agent means managing execution state by hand, reconstructing it from LLM transcripts and final environment state.
+>
+> :shepherd: draws on functional programming to keep an agent's whole execution as a reversible, Git-like trace: one you can branch, roll back to any previous state, and replay. A meta-agent then simply becomes an agent that operates on another agent's definition and trace.
 >
 > We build three meta-agents on it. **(1)** A live supervisor closes **91%** of the coordination gap on CooperBench, from 28.8% to 54.7%. **(2)** A counterfactual optimizer beats GEPA and MetaHarness, by up to **+11%** on LiveCodeBench and with less runtime. **(3)** Meta-agent-guided Tree-GRPO adds **+5.2%** over flat GRPO on Terminal-Bench 2.0. Underneath, a whole-filesystem fork costs about 140 ms, roughly **5x** cheaper than `docker commit`.
 >

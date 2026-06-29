@@ -165,7 +165,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 ![**Figure 4.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
-> A meta-agent supervises two parallel coding agents well because it observes both effect streams without perturbing them and acts in the gap between intent and result. It is an ordinary agent on the substrate, and it recovers 91% of the coordination gap that messaging-only baseline leaves open.
+> Meta-agents in :shepherd: supervise parallel agents well because they observe both runs without perturbing them and act between intent and result. **91%** of CooperBench's coordination gap closed.
 
 ### Counterfactual Meta-Optimization
 
@@ -189,7 +189,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 ![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
-> A meta-agent optimizes a workflow well because byte-identical replay lets it score every edit against a fixed baseline instead of a noisy from-scratch re-run. That makes CRO cheaper and more honest at once, and it wins on 4 of 5 benchmarks.
+> Meta-agents in :shepherd: optimize workflows well because byte-identical replay scores every edit against one fixed baseline. Best on **4 of 5** benchmarks, at lower wall-clock.
 
 ### Meta-Agent-Guided Tree RL
 
@@ -211,7 +211,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
 
 > [!insight]
-> A meta-agent trains a policy better because cheap mid-rollout forking turns one bit of final reward into a per-step advantage signal. With budget, recipe, and task set held fixed, that buys +5.2 points on a hard out-of-distribution benchmark.
+> Meta-agents in :shepherd: train better policies because cheap mid-rollout forks turn a single final reward into per-step advantage. **+5.2 points** out of distribution.
 
 ## FAQ
 

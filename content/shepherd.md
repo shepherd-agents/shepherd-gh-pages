@@ -148,9 +148,9 @@ Here are three meta-agents we built on :shepherd:, at three moments in an agent'
 
 #### Multi-Agent Runtime Intervention
 
-CooperBench documents a fact: two coding agents working in parallel on related features do *worse* than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.
+[CooperBench](https://arxiv.org/abs/2601.13295) documents a fact: two coding agents working in parallel on related features do *worse* than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.
 
-**Setup.** Each task is a pair of related features in one repository. Two Claude Haiku 4.5 :worker:s run in forked scopes, one feature each, and a pair counts as solved only when both features pass their own pytest suite. We compare four conditions over 479 structurally conflicting pairs: one agent doing both features in sequence (the solo single-agent ceiling), two workers in parallel with no coordination, two workers passing peer-to-peer messages (the coop baseline), and two workers under a meta-agent (ours). The comparison that matters is managed against coop: a win there means supervising through the effect stream beats letting the workers message each other directly.
+**Setup.** Each task is a pair of related features in one repository. Two Claude Haiku 4.5 :worker:s run in forked scopes, one feature each, and a pair counts as solved only when both features pass their own pytest suite. We compare four conditions over 479 structurally conflicting pairs: one agent doing both features in sequence (the solo single-agent ceiling), two workers in parallel with no coordination, two workers passing peer-to-peer messages (the coop baseline), and two workers under a meta-agent (ours). The comparison that matters is ours against coop: a win there means supervising through the effect stream beats letting the workers message each other directly.
 
 **The intervention loop.** The meta-agent, Claude Sonnet 4.6 or the stronger Opus 4.7, subscribes to both workers' effect streams. Observation is a read-side view of the trace, so watching both workers adds nothing to their context (the zero-token result from the overhead section). Every few seconds the meta-agent inspects what each worker is about to do and picks one of three actions: `inject` a note into a worker's context to redirect it, `handoff` one worker's finished scope to the other as its starting point so the second builds on the first instead of colliding with it, or `discard` a worker that has wedged itself and restart it from a clean fork. None of this touches the workers' code or the framework. The supervisor is an ordinary agent whose input is the pair's run.
 
@@ -169,7 +169,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 
 When a workflow fails, the fault is usually a few bad calls out of many. The obvious way to test a fix is to patch the workflow and run it again, but a fresh run also draws fresh randomness, so a better score might be your edit or might be the dice. Optimizers that re-run from scratch spend much of their budget fighting that noise.
 
-**Setup.** We compare counterfactual replay (CRO) against two optimizers, GEPA and MetaHarness, on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and TerminalBench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
+**Setup.** We compare counterfactual replay (CRO) against two optimizers, [GEPA](https://arxiv.org/abs/2507.19457) and [MetaHarness](https://arxiv.org/abs/2603.28052), on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and TerminalBench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
 
 **How CRO works.** CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache (the KV-cache result above), so each evaluation stays cheap.
 
@@ -193,7 +193,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 
 RL on long-horizon agent tasks is starved for signal. The reward is one bit, at the very end, so flat GRPO is slow to learn which of the dozens of turns actually mattered.
 
-**Setup.** Training runs in two phases. First, rollout collection: the base policy runs on terminal-agent tasks from the Endless Terminals corpus inside E2B or Daytona sandboxes. At selected turns the meta-agent forks the scope and samples K=4 sibling continuations from that exact state, each played to completion, and saves the resulting tree. Second, training: the trees feed a GRPO trainer (SLIME on Modal H100s) whose advantages come from the spread across shared-prefix siblings, so there is no separate value model and no process reward model. Flat GRPO and Tree-GRPO run on matched generation compute (same token budget, same rollout steps), so the tree structure adds signal without adding compute.
+**Setup.** Training runs in two phases. First, rollout collection: the base policy runs on terminal-agent tasks from the [Endless Terminals](https://arxiv.org/abs/2601.16443) corpus inside E2B or Daytona sandboxes. At selected turns the meta-agent forks the scope and samples K=4 sibling continuations from that exact state, each played to completion, and saves the resulting tree. Second, training: the trees feed a GRPO trainer (SLIME on Modal H100s) whose advantages come from the spread across shared-prefix siblings, so there is no separate value model and no process reward model. Flat GRPO and Tree-GRPO run on matched generation compute (same token budget, same rollout steps), so the tree structure adds signal without adding compute.
 
 **Why the forks help.** Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, recovered from the same one-bit reward. And because forked branches reuse the byte-identical prefix, each sibling pays only for its own suffix while the shared prefix resolves from the KV cache (the KV-cache result above). A K-way tree therefore costs about K extra suffixes, not K full rollouts.
 
@@ -206,7 +206,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 | Qwen3.5-35B-A3B | 26.1±4.21 | 34.2±4.05 | **39.4±3.87** (+5.2) |
 | Nemotron-3-Super-120B-A12B | 30.3±3.62 | 33.8±3.41 | **37.2±3.19** (+3.4) |
 
-*Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
+*Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.*
 
 > [!insight]
 > :shepherd: is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds **+5.2 points** with Qwen3.5-35B-A3B on Terminal-Bench 2.0.

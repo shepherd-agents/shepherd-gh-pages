@@ -45,6 +45,12 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1
 .affil-pill{display:inline-block;padding:6px 16px;border:1px solid var(--line);
   border-radius:999px;background:var(--code-bg);font-size:.82rem;color:var(--muted)}
 .post__affil{margin:0 0 8px}
+/* affiliation org logos (matches the homepage .orgs row) */
+.orgs{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:30px;margin:10px 0 4px}
+.orgs img{height:54px;width:auto;opacity:.88}
+.orgs img[alt="Stanford NLP Group"]{height:104px}
+.orgs a{display:inline-flex}
+.orgs a:hover img{opacity:1}
 .post__date{color:var(--faint);font-size:.9rem;margin:0 0 14px}
 .post__links{font-size:1rem;margin:0}
 .post__links .sep{color:var(--faint)}
@@ -206,4 +212,7 @@ img,svg,video,pre{max-width:100%}
   .post__links{font-size:.92rem}
   .callout{padding:14px 16px}
   pre{padding:12px 13px}
+  .orgs{gap:16px;margin-bottom:18px}
+  .orgs img{height:38px}
+  .orgs img[alt="Stanford NLP Group"]{height:70px}
 }

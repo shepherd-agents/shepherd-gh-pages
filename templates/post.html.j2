@@ -40,6 +40,11 @@
         {% for a in meta.authors %}<a href="{{ a.url }}">{{ a.name }}</a>{% if a.equal %}{% if a.note %}<span class="sn sn--byline"><input type="checkbox" id="sn-byline" class="sn-toggle"><label for="sn-byline" class="sn-ref">*</label><span class="sn-body">{{ a.note }}</span></span>{% else %}<sup>*</sup>{% endif %}{% endif %}<sup>{{ a.affil }}</sup>{% if not loop.last %},{% if a.break_after %}<br>{% else %} {% endif %}{% endif %}{% endfor %}
       </p>
       <p class="post__affil"><span class="affil-pill">{% for af in meta.affiliations %}<sup>{{ af.id }}</sup>{{ af.name }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</span></p>
+      <div class="orgs">
+        <a href="https://github.com/CHATS-lab" target="_blank" rel="noopener" title="CHATS-Lab"><img src="../assets/logo-chats.png" alt="CHATS-Lab"></a>
+        <a href="https://www.northeastern.edu/" target="_blank" rel="noopener" title="Northeastern University"><img src="../assets/logo-northeastern.png" alt="Northeastern University"></a>
+        <a href="https://nlp.stanford.edu/" target="_blank" rel="noopener" title="Stanford NLP Group"><img src="../assets/logo-stanfordnlp.png" alt="Stanford NLP Group"></a>
+      </div>
     </header>
     <article class="post-body">
 {{ body }}

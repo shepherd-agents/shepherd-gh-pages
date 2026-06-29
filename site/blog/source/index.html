@@ -29,7 +29,7 @@
 
 <p>As agents take on more complex tasks, they increasingly rely on <strong>meta-agents</strong>: higher-order agents that create, operate on, and manage other agents mid-task. Yet building a meta-agent is challenging today: developers have to reconstruct agents' execution traces from raw LLM transcripts and final environment states, then manage them by hand.</p>
 <p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is a runtime substrate that makes this easy. Drawing on functional programming, it keeps an agent's whole execution as a reversible, Git-like trace that one can branch, roll back, and replay. A meta-agent can then inspect and transform another agent's trace cheaply: a full filesystem revert and fork takes ~140ms regardless of image size, <strong>5x</strong> faster than <code>docker commit</code>.</p>
-<p>We demonstrate three meta-agents built on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates conflicts between two parallel agents, lifting pair-coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> proposes targeted edits to repair agent workflow, outperforming MetaHarness by <strong>+27.5%</strong> on LiveCodeBench with <strong>~46%</strong> less wall-clock time. <strong>(3)</strong> A <strong>training meta-agent</strong> selects fork points in RL rollouts to enable Tree-GRPO, improving <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0. Beyond these examples, <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> opens up a broader space of meta-agent use cases in a principled and efficient way.</p>
+<p>We demonstrate three meta-agents built on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates conflicts between two parallel agents, lifting pair-coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> proposes targeted edits to repair agent workflow, outperforming MetaHarness by <strong>+27.5%</strong> on LiveCodeBench with <strong>46%</strong> less wall-clock time. <strong>(3)</strong> A <strong>training meta-agent</strong> selects fork points in RL rollouts to enable Tree-GRPO, improving <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0. Beyond these examples, <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> opens up a broader space of meta-agent use cases in a principled and efficient way.</p>
 <p><strong>Resources</strong> &nbsp; <img class="rsrc" src="../../assets/logo-shepherd.png" alt=""><a href="https://shepherd-agents.ai/">Homepage</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-arxiv.svg" alt=""><a href="https://arxiv.org/abs/2605.10913">Paper</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-alphaxiv.png" alt=""><a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-github.svg" alt=""><a href="https://github.com/dcx/poc-crank-v2">Code</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-docs.svg" alt=""><a href="https://docs.shepherd-agents.ai/">Docs</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-x.svg" alt="">Tweet</p>
 </aside>
 
@@ -46,47 +46,47 @@
 <thead>
 <tr>
 <th>Method</th>
-<th style="text-align: center;">Intercept execution</th>
-<th style="text-align: center;">Fork agent + env</th>
-<th style="text-align: center;">Revert to past state</th>
-<th style="text-align: center;">Modify behavior</th>
+<th align="center">Intercept execution</th>
+<th align="center">Fork agent + env</th>
+<th align="center">Revert to past state</th>
+<th align="center">Modify behavior</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>BranchFS</td>
-<td style="text-align: center;">○</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">○</td>
+<td align="center">○</td>
+<td align="center">◐</td>
+<td align="center">◐</td>
+<td align="center">○</td>
 </tr>
 <tr>
 <td>Docker</td>
-<td style="text-align: center;">○</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">○</td>
+<td align="center">○</td>
+<td align="center">◐</td>
+<td align="center">◐</td>
+<td align="center">○</td>
 </tr>
 <tr>
 <td>OpenHands</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">○</td>
+<td align="center">◐</td>
+<td align="center">◐</td>
+<td align="center">◐</td>
+<td align="center">○</td>
 </tr>
 <tr>
 <td>AgentGit</td>
-<td style="text-align: center;">○</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">◐</td>
-<td style="text-align: center;">○</td>
+<td align="center">○</td>
+<td align="center">◐</td>
+<td align="center">◐</td>
+<td align="center">○</td>
 </tr>
 <tr>
 <td><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span></td>
-<td style="text-align: center;">●</td>
-<td style="text-align: center;">●</td>
-<td style="text-align: center;">●</td>
-<td style="text-align: center;">●</td>
+<td align="center">●</td>
+<td align="center">●</td>
+<td align="center">●</td>
+<td align="center">●</td>
 </tr>
 </tbody>
 </table>
@@ -171,7 +171,7 @@
 <p><code>oversee</code> watches the effect stream without disturbing it, pushes effects in to intervene, checks out an earlier commit to rewind, and forks a scope to try something else. Because it is an agent like any other, a third agent can supervise the supervisor by taking <code>oversee</code>'s run as its input.</p>
 <p><strong>The life of an effect.</strong> The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the <em>intent</em> as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its <em>outcome</em> is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).</p>
 <details>
-<summary>The functional-programming view</summary>
+<p><summary>The functional-programming view</summary></p>
 <p>The mapping in the table above is exact, and the properties a meta-agent relies on fall straight out of it. Algebraic effects are why observation never perturbs the worker and interception is possible at all: the intent exists as a value on the stream before the action runs. Scoped handlers are why a fork is a clean, nestable branch that merges back or is discarded as a unit. A persistent, content-addressed trace is why any past state replays byte for byte instead of being rebuilt from a log.</p>
 <p>The deterministic core of this calculus is mechanized in Lean, which lets us state the replay and revert guarantees precisely instead of by convention.</p>
 </details>
@@ -391,31 +391,31 @@
 
 <h1 id="faq">FAQ</h1>
 <details>
-<summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
+<p><summary>Does Shepherd run on Linux, macOS, and Windows?</summary></p>
 <p>Shepherd currently supports both Linux and macOS. For Windows, we suggest WSL2 for now. First-class Windows support is on the roadmap; see the <a href="https://docs.shepherd-agents.ai/">docs</a> for current status.</p>
 </details>
 <details>
-<summary>Do I have to rewrite my agent? Does it work with my model?</summary>
+<p><summary>Do I have to rewrite my agent? Does it work with my model?</summary></p>
 <p>Shepherd is its own lightweight, multi-provider framework: you write agents, and meta-agents, as typed <code>@task</code> functions and swap the model behind a provider (Claude by default). A meta-agent then supervises any task on the substrate without that task knowing it is watched. It is the runtime your agents run on: you build on it directly.</p>
 </details>
 <details>
-<summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary>
+<p><summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary></p>
 <p>It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support for backends like E2B, Modal, and Daytona, behind one <code>Device</code> interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.</p>
 </details>
 <details>
-<summary>What does a fork capture?</summary>
+<p><summary>What does a fork capture?</summary></p>
 <p>Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one step. Replay the branch and the agent picks up exactly where it left off.</p>
 </details>
 <details>
-<summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary>
+<p><summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary></p>
 <p>A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.</p>
 </details>
 <details>
-<summary>Is this production-ready, or a research substrate?</summary>
+<p><summary>Is this production-ready, or a research substrate?</summary></p>
 <p>Today Shepherd is built for research, and we are actively moving it toward production. The core is small and its correctness argument is checked in Lean, and we are maintaining the framework and hardening it with each release. You can build on it now, and it will keep getting more production-ready over time.</p>
 </details>
 <details>
-<summary>Why <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>? and why a sheep?</summary>
+<p><summary>Why <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>? and why a sheep?</summary></p>
 <p align="center"><img src="../../assets/logo-shepherd.png" alt="Shepherd logo" height="96"></p>
 <p>A <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is exactly the job. A real shepherd doesn't do the grazing: it watches the flock, keeps the sheep on track, and steps in when one wanders toward a cliff. That is what a meta-agent does for your worker agents. It watches the run, nudges a stray back, and pulls the agent out of trouble before it falls. The logo is a sheep in a little hat, the same animal as the workers, just the one keeping an eye on the rest. And yes, we also think it's cute.</p>
 </details>

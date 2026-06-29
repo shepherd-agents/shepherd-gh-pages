@@ -134,7 +134,7 @@ A supervisor reads a worker by subscribing to its effect stream, which raises a 
 Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
 
 > [!insight]
-> Two properties account for the cost profile. Copy-on-write keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
+> Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
 
 ## Results
 
@@ -142,9 +142,9 @@ Three meta-agents on one :shepherd: substrate, at three moments in an agent's li
 
 | When | Meta-agent | Substrate property it leans on |
 |---|---|---|
-| While it runs | Multi-Agent Runtime Intervention | observe without perturbing |
-| After it finishes | Counterfactual Meta-Optimization | byte-for-byte replay |
-| While you train it | Meta-Agent-Guided Tree RL | cheap forking |
+| While agents run | Multi-Agent Runtime Intervention | Observe |
+| After agents finish | Counterfactual Meta-Optimization | Replay |
+| While training agents | Meta-Agent-Guided Tree RL | Fork |
 
 ![**Figure 2.** How each meta-agent acts on the execution trace. (a) Multi-Agent Runtime Intervention observes two workers and intervenes before a conflict lands; (b) Counterfactual Meta-Optimization forks at the edited commit and replays only the suffix; (c) Meta-Agent-Guided Tree RL forks K sibling rollouts at a chosen turn.](../assets/fig-mechanisms.png)
 

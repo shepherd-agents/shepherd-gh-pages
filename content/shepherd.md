@@ -129,7 +129,7 @@ A supervisor reads a worker by subscribing to its effect stream, which raises a 
 
 #### KV-cache reuse under replay
 
-Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
+Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB-2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
 
 > [!insight]
 > Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
@@ -169,11 +169,11 @@ The two supervisors reach for different tools. Counting pairs where each action 
 
 When a workflow fails, the fault is usually a few bad calls out of many. The obvious way to test a fix is to patch the workflow and run it again, but a fresh run also draws fresh randomness, so a better score might be your edit or might be the dice. Optimizers that re-run from scratch spend much of their budget fighting that noise.
 
-**Setup.** We compare counterfactual replay (CRO) against two optimizers, [GEPA](https://arxiv.org/abs/2507.19457) and [MetaHarness](https://arxiv.org/abs/2603.28052), on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and TerminalBench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
+**Setup.** We compare counterfactual replay (CRO) against two optimizers, [GEPA](https://arxiv.org/abs/2507.19457) and [MetaHarness](https://arxiv.org/abs/2603.28052), on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and Terminal-Bench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
 
 **How CRO works.** CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache (the KV-cache result above), so each evaluation stays cheap.
 
-**Results.** CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound TerminalBench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 4 points (12.8%) at the least wall-clock of any method.
+**Results.** CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound Terminal-Bench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 4% (31.2 to 35.2) at the least wall-clock of any method.
 
 | Method | HoVer | MATH | IFBench | LiveCodeBench | TB-2 (avg@5) |
 |---|---|---|---|---|---|
@@ -182,7 +182,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 | MetaHarness | 77.8±0.4 (235) | 79.3±1.2 (101) | **52.3±1.4** (126) | 40.0±3.6 (217) | 31.2 (173) |
 | :cro: | **79.4±0.2** (120) | **80.0±2.0** (42) | 51.3±1.1 (82) | **51.0±1.7** (117) | **35.2** (73) |
 
-*Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4 points) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.*
+*Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+4%) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.*
 
 ![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
@@ -206,10 +206,10 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 | Qwen3.5-35B-A3B | 26.1±4.21 | 34.2±4.05 | **39.4±3.87** (+5.2) |
 | Nemotron-3-Super-120B-A12B | 30.3±3.62 | 33.8±3.41 | **37.2±3.19** (+3.4) |
 
-*Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.*
+*Terminal-Bench 2.0 performance, avg@5 (%); +gain is vs flat GRPO.*
 
 > [!insight]
-> :shepherd: is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds **+5.2 points** with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
+> :shepherd: is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds **+5.2%** with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
 
 # FAQ
 

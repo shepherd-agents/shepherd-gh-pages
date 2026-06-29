@@ -189,7 +189,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 ![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
-> Meta-agents in :shepherd: optimize workflows better than GEPA and Meta-harness, given the byte-identical replay on trajectories and able to perform counterfactual meta-optimization. Beat baselines on **4 of 5** benchmarks with a lower wall-clock.
+> Meta-agents in :shepherd: optimize workflows better than GEPA and Meta-harness, given the byte-identical replay on trajectories and able to perform counterfactual meta-optimization. Beating baselines on **4 of 5** benchmarks with a lower wall-clock.
 
 ### Meta-Agent-Guided Tree RL
 

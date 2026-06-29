@@ -33,7 +33,7 @@ links:
 
 ## Motivation
 
-Look at how the strongest agentic systems get built now: an agent runs and steers other agents. Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Nous Research's Hermes delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276). Each puts a higher-order agent in charge of others, a **meta-agent**, and they are becoming central to getting real work out of agentic systems.
+Look at how the strongest agentic systems get built now: each puts a higher-order agent, a **meta-agent**, in charge of the others.^[Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Nous Research's Hermes delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).] These meta-agents are becoming central to getting real work out of agentic systems.
 
 To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
 

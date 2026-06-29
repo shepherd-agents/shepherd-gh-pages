@@ -165,7 +165,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 ![**Figure 4.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
-> Meta-agents in :shepherd: closed **91%** of CooperBench's coordination gap, which allow supervision of parallel agents without perturbing them and only add minimal overhead to the runtime.
+> Meta-agents in :shepherd: close **91%** of CooperBench's coordination gap: they supervise parallel agents without perturbing them, and add only minimal runtime overhead.
 
 ### Counterfactual Meta-Optimization
 
@@ -189,7 +189,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 ![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
-> Meta-agents in :shepherd: optimize workflows better than GEPA and Meta-harness, given the byte-identical replay on trajectories and able to perform counterfactual meta-optimization. Beating baselines on **4 of 5** benchmarks with a lower wall-clock.
+> Meta-agents in :shepherd: optimize workflows better than GEPA and MetaHarness, because byte-identical replay on trajectories lets them run counterfactual meta-optimization. They beat baselines on **4 of 5** benchmarks at lower wall-clock.
 
 ### Meta-Agent-Guided Tree RL
 
@@ -211,7 +211,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
 
 > [!insight]
-> :shepherd: is able to train better RL policies, because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This leads to **+5.2 points** achieved with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
+> :shepherd: is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds **+5.2 points** with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
 
 ## FAQ
 

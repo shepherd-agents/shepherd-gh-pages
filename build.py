@@ -92,8 +92,8 @@ def convert_callouts(md, render_inner):
                 inner.append(re.sub(r"^>\s?", "", lines[i]))
                 i += 1
             html = render_inner("\n".join(inner))
-            # takeaway callouts get a bold "💡 Key Takeaway:" label
-            label = ('<p class="callout__label">\U0001F4A1 Key Takeaway:</p>'
+            # takeaway callouts get a bold "💡 Takeaway:" label
+            label = ('<p class="callout__label">\U0001F4A1 Takeaway:</p>'
                      if ctype == "insight" else "")
             out += ["", '<aside class="callout callout--%s">' % ctype, label, html,
                     "</aside>", ""]

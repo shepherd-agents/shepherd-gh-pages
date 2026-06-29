@@ -171,7 +171,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 
 #### Counterfactual Meta-Optimization
 
-When a workflow fails, the fault is usually a few bad calls out of many. The obvious way to test a fix is to patch the workflow and run it again, but a fresh run also draws fresh randomness, so a better score might be your edit or might be the dice. Optimizers that re-run from scratch spend much of their budget fighting that noise.
+You tweak one prompt in a ten-step research workflow and the score goes up two points. Was that your edit, or just a luckier roll of the dice? Re-run it and you'll get a third number. Optimizers that re-test every candidate with a fresh run from scratch spend most of their budget fighting that noise.
 
 **Setup.** We compare counterfactual replay (CRO) against two optimizers, [GEPA](https://arxiv.org/abs/2507.19457) and [MetaHarness](https://arxiv.org/abs/2603.28052), on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and Terminal-Bench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
 
@@ -195,7 +195,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 
 #### Meta-Agent-Guided Tree RL
 
-RL on long-horizon agent tasks is starved for signal. The reward is one bit, at the very end, so flat GRPO is slow to learn which of the dozens of turns actually mattered.
+An agent runs thirty commands to repair a broken Docker build and gets one bit back at the end: fixed, or not. Which of the thirty earned the reward? Flat GRPO can't tell them apart, so it reinforces all of them equally and learns slowly.
 
 **Setup.** Training runs in two phases. First, rollout collection: the base policy runs on terminal-agent tasks from the [Endless Terminals](https://arxiv.org/abs/2601.16443) corpus inside E2B or Daytona sandboxes. At selected turns the meta-agent forks the scope and samples K=4 sibling continuations from that exact state, each played to completion, and saves the resulting tree. Second, training: the trees feed a GRPO trainer (SLIME on Modal H100s) whose advantages come from the spread across shared-prefix siblings, so there is no separate value model and no process reward model. Flat GRPO and Tree-GRPO run on matched generation compute (same token budget, same rollout steps), so the tree structure adds signal without adding compute.
 

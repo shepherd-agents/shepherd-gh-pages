@@ -201,7 +201,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 
 ![**Figure 6.** Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.](../assets/fig-treegrpo.png)
 
-**Results.** Out-of-distribution transfer to TerminalBench 2.0 (avg@5 over 89 tasks, 5 seeds), a suite never seen in training:
+**Results.** On Terminal-Bench 2.0 (avg@5 over 89 tasks, 5 seeds):
 
 | Model | Base | Flat GRPO | :treegrpo: |
 |---|---|---|---|
@@ -211,7 +211,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
 
 > [!insight]
-> Meta-agents in :shepherd: train better policies because cheap mid-rollout forks turn a single final reward into per-step advantage. **+5.2 points** out of distribution.
+> Meta-agents in :shepherd: train better policies because cheap mid-rollout forks turn a single final reward into per-step advantage. **+5.2 points** on Terminal-Bench 2.0.
 
 ## FAQ
 

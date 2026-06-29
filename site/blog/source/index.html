@@ -39,9 +39,9 @@
 </figure>
 
 <h1 id="motivation">Motivation</h1>
-<p>Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then clobber each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a <strong>meta-agent</strong>, and the recent agentic systems increasingly look like this.<span class="sn"><input type="checkbox" id="sn1" class="sn-toggle"><label for="sn1" class="sn-ref">1</label><span class="sn-body"><span class="sn-num">1.</span> Examples like: Anthropic's Claude Code composes <a href="https://code.claude.com/docs/en/workflows">dynamic workflows</a> of sub-agents, Hermes Agents delegates to <a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation">agent teams</a>, and Kimi K2.5 coordinates an <a href="https://arxiv.org/abs/2602.02276">agent swarm</a>.</span></span></p>
-<p>To do their job, these meta-agents reach for the same few operations on the agent underneath: <strong>observe</strong> agent as it runs, <strong>fork</strong> agent for possible directions, <strong>revert</strong> it on failure, <strong>modify</strong> it to fix the bug, and <strong>resume</strong>. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state<span class="sn"><input type="checkbox" id="sn2" class="sn-toggle"><label for="sn2" class="sn-ref">2</label><span class="sn-body"><span class="sn-num">2.</span> Check below table for comparison between <a href="https://arxiv.org/abs/2602.08199">BranchFS</a>, Docker native, <a href="https://arxiv.org/abs/2511.03690">OpenHands</a> and <a href="https://arxiv.org/abs/2511.00628">AgentGit</a>.</span></span>.</p>
-<p>Existing runtimes framework only partly there. Every one is built for the main agent that is <em>running</em>. None is built for a second agent acting <em>on</em> it: none lets you operate on another <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">agent</span>'s whole execution and definition as data or traces.</p>
+<p>Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then clobber each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a <strong>meta-agent</strong>, and recent agentic systems increasingly look like this.<span class="sn"><input type="checkbox" id="sn1" class="sn-toggle"><label for="sn1" class="sn-ref">1</label><span class="sn-body"><span class="sn-num">1.</span> Examples like: Anthropic's Claude Code composes <a href="https://code.claude.com/docs/en/workflows">dynamic workflows</a> of sub-agents, Hermes Agents delegates to <a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation">agent teams</a>, and Kimi K2.5 coordinates an <a href="https://arxiv.org/abs/2602.02276">agent swarm</a>.</span></span></p>
+<p>To do their job, these meta-agents reach for the same few operations on the agent underneath: <strong>observe</strong> it as it runs, <strong>fork</strong> it to try a different direction, <strong>revert</strong> it on failure, <strong>modify</strong> it to fix the bug, and <strong>resume</strong>. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state<span class="sn"><input type="checkbox" id="sn2" class="sn-toggle"><label for="sn2" class="sn-ref">2</label><span class="sn-body"><span class="sn-num">2.</span> Check below table for comparison between <a href="https://arxiv.org/abs/2602.08199">BranchFS</a>, Docker native, <a href="https://arxiv.org/abs/2511.03690">OpenHands</a> and <a href="https://arxiv.org/abs/2511.00628">AgentGit</a>.</span></span>.</p>
+<p>Existing runtime frameworks only get part of the way there. Every one is built for the main agent that is <em>running</em>. None is built for a second agent acting <em>on</em> it: none lets you operate on another <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">agent</span>'s whole execution and definition as data or traces.</p>
 <table>
 <thead>
 <tr>
@@ -392,7 +392,7 @@
 <h1 id="faq">FAQ</h1>
 <details>
 <p><summary>Does Shepherd run on Linux, macOS, and Windows?</summary></p>
-<p>Shepherd currently supports both Linux and MacOS. For Windows we will suggest using WSL2 for now. First-class Windows support is on the roadmap; see the <a href="https://docs.shepherd-agents.ai/">docs</a> for current status.</p>
+<p>Shepherd currently supports both Linux and macOS. For Windows, we suggest WSL2 for now. First-class Windows support is on the roadmap; see the <a href="https://docs.shepherd-agents.ai/">docs</a> for current status.</p>
 </details>
 <details>
 <p><summary>Do I have to rewrite my agent? Does it work with my model?</summary></p>
@@ -400,7 +400,7 @@
 </details>
 <details>
 <p><summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary></p>
-<p>It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support to backends like E2B, Modal, and Daytona, behind one <code>Device</code> interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.</p>
+<p>It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support for backends like E2B, Modal, and Daytona, behind one <code>Device</code> interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.</p>
 </details>
 <details>
 <p><summary>What does a fork capture?</summary></p>

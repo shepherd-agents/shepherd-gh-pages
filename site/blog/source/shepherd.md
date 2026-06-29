@@ -35,11 +35,11 @@ links:
 
 # Motivation
 
-Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then clobber each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a **meta-agent**, and the recent agentic systems increasingly look like this.^[Examples like: Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Hermes Agents delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).]
+Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then clobber each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a **meta-agent**, and recent agentic systems increasingly look like this.^[Examples like: Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Hermes Agents delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).]
 
-To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** agent as it runs, **fork** agent for possible directions, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state^[Check below table for comparison between [BranchFS](https://arxiv.org/abs/2602.08199), Docker native, [OpenHands](https://arxiv.org/abs/2511.03690) and [AgentGit](https://arxiv.org/abs/2511.00628).].
+To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it to try a different direction, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state^[Check below table for comparison between [BranchFS](https://arxiv.org/abs/2602.08199), Docker native, [OpenHands](https://arxiv.org/abs/2511.03690) and [AgentGit](https://arxiv.org/abs/2511.00628).].
 
-Existing runtimes framework only partly there. Every one is built for the main agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data or traces.
+Existing runtime frameworks only get part of the way there. Every one is built for the main agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data or traces.
 
 | Method | Intercept execution | Fork agent + env | Revert to past state | Modify behavior |
 |---|:---:|:---:|:---:|:---:|
@@ -220,7 +220,7 @@ An agent runs thirty commands to repair a broken Docker build and gets one bit b
 <details markdown="1">
 <summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
 
-Shepherd currently supports both Linux and MacOS. For Windows we will suggest using WSL2 for now. First-class Windows support is on the roadmap; see the [docs](https://docs.shepherd-agents.ai/) for current status.
+Shepherd currently supports both Linux and macOS. For Windows, we suggest WSL2 for now. First-class Windows support is on the roadmap; see the [docs](https://docs.shepherd-agents.ai/) for current status.
 
 </details>
 
@@ -234,7 +234,7 @@ Shepherd is its own lightweight, multi-provider framework: you write agents, and
 <details markdown="1">
 <summary>Does it replace my sandbox, or wrap it? Can I self-host?</summary>
 
-It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support to backends like E2B, Modal, and Daytona, behind one `Device` interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.
+It wraps it. Shepherd adds a layer over the container your agent already runs in, with off-the-shelf support for backends like E2B, Modal, and Daytona, behind one `Device` interface. Shepherd is open source and self-hostable, with no hosted-service lock-in.
 
 </details>
 

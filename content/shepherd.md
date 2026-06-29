@@ -51,9 +51,7 @@ Existing runtimes each give you a piece. OpenHands exposes a session's event str
 
 # :shepherd:: your harness is just another agent
 
-Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
-
-The piece that matters is the **higher-order function**, one that takes another function as an argument. An agent whose argument is another agent's run is exactly that, and we call it a meta-agent.
+A meta-agent operates on another agent's run while it happens: it watches the run, branches it to try an alternative, rolls it back when it fails, patches it, and lets it keep going. That only works if the run is something you can hold and manipulate, like a Git repo. So :shepherd: records everything an agent does, every model call, tool call, and file write, as a commit in a Git-like trace that a meta-agent can read, branch, and rewind.
 
 The system has four parts:
 
@@ -64,7 +62,7 @@ The system has four parts:
 | **Scope** | Where an agent runs. Forking a scope copies the agent and its filesystem together in one cheap step. | a scoped effect handler |
 | **Trace** | The run's history: a commit graph where any past state is reachable by its hash. | a persistent data structure |
 
-To hand a run to a higher-order agent, the run itself has to be a value: something you can hold, copy, and rewind, not a transcript you read after the fact. So :shepherd: records every action an agent takes, a model call, a tool call, a file write, as a commit in a Git-like trace, and a meta-agent operates on that run the way you operate on a repo:
+A meta-agent operates on that trace the way you operate on a Git repo:
 
 | What you'd do to a repo | What :shepherd: does to a run |
 |---|---|

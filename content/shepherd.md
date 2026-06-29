@@ -29,9 +29,9 @@ links:
 >
 > **Resources** &nbsp; <img class="rsrc" src="../assets/logo-shepherd.png" alt="">[Homepage](https://shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-arxiv.svg" alt="">[Paper](https://arxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-alphaxiv.png" alt="">[alphaXiv](https://www.alphaxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-github.svg" alt="">[Code](https://github.com/dcx/poc-crank-v2) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-docs.svg" alt="">[Docs](https://docs.shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-x.svg" alt="">Tweet
 
-![**Figure 1.** One substrate, three meta-agents. *Top:* a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
+![**Figure 1.** Three meta-agents built on Shepherd, three examples of many. *Top:* a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +5.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
-## Motivation
+# Motivation
 
 Look at how the current agentic systems get built now: each puts a higher-order agent, a **meta-agent**, in charge of the others.^[Examples like: Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Nous Research's Hermes delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).] These meta-agents are becoming central to getting real work out of agentic systems. To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state.
 
@@ -47,7 +47,7 @@ Existing runtimes each give you a piece. OpenHands exposes a session's event str
 
 *● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.*
 
-## :shepherd:: your harness is just another agent
+# :shepherd:: your harness is just another agent
 
 Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
 
@@ -102,17 +102,17 @@ The deterministic core of this calculus is mechanized in Lean, which lets us sta
 
 </details>
 
-## Infrastructure: :shepherd:'s System Performance
+# Infrastructure: :shepherd:'s System Performance
 
 A meta-agent leans on the same handful of operations: it observes a worker, forks it to try an alternative, reverts on failure, and replays a branch against the model's cache. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the three that sit on the critical path.
 
 The one that has to be cheapest is the fork, since the meta-agents below fork constantly: a supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. The mechanism is to avoid copying the filesystem. Each :shepherd: scope is an OverlayFS mount, and `scope.fork()` adds a writable layer over the shared read-only ones. Nothing is copied up front: a branch pays only for the bytes it changes (copy-on-write), and `revert` discards the writable layer.
 
-### Setup
+#### Setup
 
 We compare four ways to branch a running container's filesystem: a full root-fs copy (`tar`), `docker commit`, BranchFS, and :shepherd:'s overlay.^[We also measured a cloud-snapshot baseline (Modal's `snapshot_filesystem`). The Docker images are pre-built task environments from [Terminal-Bench 2.0](https://arxiv.org/abs/2601.11868) (Merrill et al., 2026).] The workloads are three real Terminal-Bench 2.0 Docker images spanning a 138x size range, at 42 MB, 200 MB, and 5.8 GB. All runs use a single 4 vCPU / 8 GB Linux host with docker and OverlayFS, 50 repetitions per cell, median reported. We time two operations, fork (standing up a usable branch) and revert (rolling a scope back to an earlier commit), and record the disk each fork consumes.
 
-### Fork and revert latency
+#### Fork and revert latency
 
 | Method | Fork 42 MB | Fork 200 MB | Fork 5.8 GB | Storage / fork |
 |---|---|---|---|---|
@@ -123,20 +123,20 @@ We compare four ways to branch a running container's filesystem: a full root-fs 
 
 The latency is flat in image size. Across a 138x range the fork time moves from 134 ms to 143 ms, because overlay cost scales with what a branch changes rather than with the image. That is roughly 5x faster than `docker commit` and up to 192x faster than a full copy on the 5.8 GB image, and at about 10 KB and 143 ms a fork is 2 to 3% of a single agent turn. Revert behaves the same way, at 140 to 147 ms.
 
-### Observation overhead
+#### Observation overhead
 
 A supervisor reads a worker by subscribing to its effect stream, which raises a fair question: does subscribing perturb the worker? It does not. We ran the same worker with and without a supervisor attached and compared its messages. They are identical, the same 21 messages and the same bytes, with zero added tokens in the worker's context. The stream is a read-side view of effects the kernel already records, so a supervised worker executes exactly as an unsupervised one.
 
-### KV-cache reuse under replay
+#### KV-cache reuse under replay
 
 Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
 
 > [!insight]
 > Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
 
-## Experiments
+# Experiments
 
-Three meta-agents on one :shepherd: substrate, at three moments in an agent's life. Each is a plain agent, and each leans on a different substrate property.
+Here are three meta-agents we built on :shepherd:, at three moments in an agent's life. They are examples; the same handful of operations supports many more. Each is a plain agent, and each leans on a different substrate property.
 
 | When | Meta-agent | Substrate property it leans on |
 |---|---|---|
@@ -146,7 +146,7 @@ Three meta-agents on one :shepherd: substrate, at three moments in an agent's li
 
 ![**Figure 2.** How each meta-agent acts on the execution trace. (a) Multi-Agent Runtime Intervention observes two workers and intervenes before a conflict lands; (b) Counterfactual Meta-Optimization forks at the edited commit and replays only the suffix; (c) Meta-Agent-Guided Tree RL forks K sibling rollouts at a chosen turn.](../assets/fig-mechanisms.png)
 
-### Multi-Agent Runtime Intervention
+#### Multi-Agent Runtime Intervention
 
 CooperBench documents a fact: two coding agents working in parallel on related features do *worse* than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.
 
@@ -165,7 +165,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 > [!insight]
 > Meta-agents in :shepherd: close **91%** of CooperBench's coordination gap: they supervise parallel agents without perturbing them, and add only minimal runtime overhead.
 
-### Counterfactual Meta-Optimization
+#### Counterfactual Meta-Optimization
 
 When a workflow fails, the fault is usually a few bad calls out of many. The obvious way to test a fix is to patch the workflow and run it again, but a fresh run also draws fresh randomness, so a better score might be your edit or might be the dice. Optimizers that re-run from scratch spend much of their budget fighting that noise.
 
@@ -189,7 +189,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 > [!insight]
 > Meta-agents in :shepherd: optimize workflows better than GEPA and MetaHarness, because byte-identical replay on trajectories lets them run counterfactual meta-optimization. They beat baselines on **4 of 5** benchmarks at lower wall-clock.
 
-### Meta-Agent-Guided Tree RL
+#### Meta-Agent-Guided Tree RL
 
 RL on long-horizon agent tasks is starved for signal. The reward is one bit, at the very end, so flat GRPO is slow to learn which of the dozens of turns actually mattered.
 
@@ -211,7 +211,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 > [!insight]
 > :shepherd: is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds **+5.2 points** with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
 
-## FAQ
+# FAQ
 
 <details markdown="1">
 <summary>Does Shepherd run on Linux, macOS, and Windows?</summary>
@@ -264,7 +264,7 @@ A :shepherd: is exactly the job. A real shepherd doesn't do the grazing: it watc
 
 </details>
 
-## Try it
+# Try it
 
 ```bash
 # 1 · install
@@ -300,7 +300,7 @@ shepherd revert 4
 
 It is the same handful of operations over a run you can fork and rewind. We are releasing Shepherd so you can build the meta-agents we have not thought of yet.
 
-## Acknowledgments
+# Acknowledgments
 
 Thanks to our early readers for their feedback.
 

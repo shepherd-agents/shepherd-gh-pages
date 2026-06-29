@@ -149,6 +149,12 @@ def render_post(text):
     m = make_md()
     html = m.convert(body)
     toc = getattr(m, "toc", "")
+    # brand tokens used in headings would render literally in the TOC (which is
+    # built before brand substitution); flatten them to plain words there.
+    for _tok, _word in ((":shepherd:", "Shepherd"), (":smark:", "Shepherd"),
+                        (":cro:", "CRO"), (":treegrpo:", "Tree-GRPO"),
+                        (":worker:", "worker"), (":agent:", "agent")):
+        toc = toc.replace(_tok, _word)
     for idx, note in enumerate(notes):
         num = idx + 1
         sn = (

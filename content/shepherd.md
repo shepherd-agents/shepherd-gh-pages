@@ -165,7 +165,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 ![**Figure 4.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
-> A meta-agent supervises two parallel coding agents well because it observes both effect streams without perturbing them and acts in the gap between intent and result. It is an ordinary agent on the substrate, and it recovers 91% of the coordination gap that peer-to-peer messaging leaves open.
+> A meta-agent supervises two parallel coding agents well because it observes both effect streams without perturbing them and acts in the gap between intent and result. It is an ordinary agent on the substrate, and it recovers 91% of the coordination gap that messaging-only baseline leaves open.
 
 ### Counterfactual Meta-Optimization
 

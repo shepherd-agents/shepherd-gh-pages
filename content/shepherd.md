@@ -33,9 +33,7 @@ links:
 
 ## Motivation
 
-Look at how the strongest agentic systems get built now: each puts a higher-order agent, a **meta-agent**, in charge of the others.^[Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Nous Research's Hermes delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).] These meta-agents are becoming central to getting real work out of agentic systems.
-
-To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. They expose only transcripts and environment snapshots, so every meta-agent reinvents the same plumbing: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild state that already existed.
+Look at how the current agentic systems get built now: each puts a higher-order agent, a **meta-agent**, in charge of the others.^[Examples like: Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Nous Research's Hermes delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).] These meta-agents are becoming central to getting real work out of agentic systems. To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it before a risky step, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state.
 
 Existing runtimes each give you a piece. OpenHands exposes a session's event stream. AgentGit gives the worker Git-like commit tools to checkpoint itself. BranchFS isolates the filesystem. Every one is built for the agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data.
 
@@ -49,7 +47,7 @@ Existing runtimes each give you a piece. OpenHands exposes a session's event str
 
 *● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.*
 
-## The idea: your harness is just another agent
+## :shepherd:: your harness is just another agent
 
 Look at what an agent actually does. It takes input (a repo, a task), runs some opaque computation in the middle (model calls, tool calls, edits), and returns an output (a patch). That is a **function**: inputs in, outputs out. And once an agent is a function, the discipline of functional programming applies to it.
 
@@ -104,7 +102,7 @@ The deterministic core of this calculus is mechanized in Lean, which lets us sta
 
 </details>
 
-## System overhead: are the operations cheap enough?
+## Infrastructure: :shepherd:'s System Performance
 
 A meta-agent leans on the same handful of operations: it observes a worker, forks it to try an alternative, reverts on failure, and replays a branch against the model's cache. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the three that sit on the critical path.
 

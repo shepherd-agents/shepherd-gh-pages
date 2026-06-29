@@ -40,9 +40,6 @@
       </p>
       <p class="post__affil"><span class="affil-pill">{% for af in meta.affiliations %}<sup>{{ af.id }}</sup>{{ af.name }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</span></p>
       {% if meta.date_display %}<p class="post__date">{{ meta.date_display }}</p>{% endif %}
-      <p class="post__links">
-        {% for l in meta.links %}{% if l.url %}<a href="{{ l.url }}">{{ l.label }}</a>{% else %}<span class="off">{{ l.label }}</span>{% endif %}{% if not loop.last %} <span class="sep">|</span> {% endif %}{% endfor %}
-      </p>
     </header>
     <article class="post-body">
 {{ body }}

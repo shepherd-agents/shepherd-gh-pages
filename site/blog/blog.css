@@ -102,6 +102,8 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1
 .brand--worker{color:#5a3fa3}                                    /* base agent violet */
 .brand__logo{height:1.05em;width:auto;vertical-align:-.2em;margin-right:.12em}
 .post__title .brand-name{color:var(--accent)}                    /* green "Shepherd" in title */
+/* resource-link icons in the TL;DR resources line */
+.rsrc{height:1em;width:auto;vertical-align:-.16em;margin-right:.28em;opacity:.9}
 
 /* ---- body ---- */
 .post-body{max-width:var(--col)}

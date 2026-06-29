@@ -136,7 +136,7 @@ Because a fork preserves the byte-identical prefix of a run, replaying a branch 
 > [!insight]
 > Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.
 
-## Results
+## Experiments
 
 Three meta-agents on one :shepherd: substrate, at three moments in an agent's life. Each is a plain agent, and each leans on a different substrate property.
 
@@ -165,7 +165,7 @@ The two supervisors reach for different tools. Counting pairs where each action 
 ![**Figure 4.** The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.](../assets/fig-strategies.png)
 
 > [!insight]
-> Meta-agents in :shepherd: supervise parallel agents well because they observe both runs without perturbing them and act between intent and result. **91%** of CooperBench's coordination gap closed.
+> Meta-agents in :shepherd: closed **91%** of CooperBench's coordination gap, which allow supervision of parallel agents without perturbing them and only add minimal overhead to the runtime.
 
 ### Counterfactual Meta-Optimization
 
@@ -189,7 +189,7 @@ When a workflow fails, the fault is usually a few bad calls out of many. The obv
 ![**Figure 5.** Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.](../assets/fig-cro.png)
 
 > [!insight]
-> Meta-agents in :shepherd: optimize workflows well because byte-identical replay scores every edit against one fixed baseline. Best on **4 of 5** benchmarks, at lower wall-clock.
+> Meta-agents in :shepherd: optimize workflows better than GEPA and Meta-harness, given the byte-identical replay on trajectories and able to perform counterfactual meta-optimization. Beat baselines on **4 of 5** benchmarks with a lower wall-clock.
 
 ### Meta-Agent-Guided Tree RL
 
@@ -211,7 +211,7 @@ RL on long-horizon agent tasks is starved for signal. The reward is one bit, at 
 *Training performance transfer to TerminalBench 2.0, avg@5 (%); +gain is vs baseline GRPO.
 
 > [!insight]
-> Meta-agents in :shepherd: train better policies because cheap mid-rollout forks turn a single final reward into per-step advantage. **+5.2 points** on Terminal-Bench 2.0.
+> :shepherd: is able to train better RL policies, because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This leads to **+5.2 points** achieved with Qwen3.5-35B-A3B on Terminal-Bench 2.0.
 
 ## FAQ
 

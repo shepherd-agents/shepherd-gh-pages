@@ -104,9 +104,9 @@ The deterministic core of this calculus is mechanized in Lean, which lets us sta
 
 # Infrastructure: :shepherd:'s System Performance
 
-A meta-agent leans on the same handful of operations: it observes a worker, forks it to try an alternative, reverts on failure, and replays a branch against the model's cache. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the three that sit on the critical path.
+A meta-agent usually relies on a similar set of operations: it observes one or more agents, forks an agent to branch off a parallel attempt, reverts to an earlier state on failure, and replays a trajectory to try an alternative. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the three that sit on the critical path.
 
-The one that has to be cheapest is the fork, since the meta-agents below fork constantly: a supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. The mechanism is to avoid copying the filesystem. Each :shepherd: scope is an OverlayFS mount, and `scope.fork()` adds a writable layer over the shared read-only ones. Nothing is copied up front: a branch pays only for the bytes it changes (copy-on-write), and `revert` discards the writable layer.
+The one that has to be cheapest is the fork, since the meta-agents below fork constantly: a supervisor forks the workers it watches, an optimizer forks a finished run at the step it edits, and the RL loop forks K siblings off every probed turn. Instead of copying the filesystem, a fork shares it. Each :shepherd: scope is an OverlayFS mount,^[OverlayFS is the Linux kernel's union filesystem; see the [kernel docs](https://docs.kernel.org/filesystems/overlayfs.html).] and `scope.fork()` adds a writable layer over the shared read-only ones. Nothing is copied up front: a branch pays only for the bytes it changes (copy-on-write), and `revert` discards the writable layer.
 
 #### Setup
 

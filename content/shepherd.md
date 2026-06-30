@@ -92,7 +92,7 @@ We compare four ways to branch a running container's filesystem: a full root-fs 
 | BranchFS | 266 ms | 272 ms | 280 ms | 12 KB |
 | :smark: | **134 ms** | **135 ms** | **143 ms** | **10 KB** |
 
-The latency is flat in image size. Across a 138x range the fork time moves from 134 ms to 143 ms, because overlay cost scales with what a branch changes rather than with the image. That is roughly 5x faster than `docker commit` and up to 192x faster than a full copy on the 5.8 GB image, and for fork, it takes 143 ms. Revert behaves the same way, at 140 to 147 ms.
+The latency is flat in image size. Across a 138x range the fork time moves from 134 ms to 143 ms, because overlay cost scales with what a branch changes rather than with the image. That is roughly 5x faster than `docker commit` and up to 374x faster than a full copy on the 5.8 GB image, and for fork, it takes 143 ms. Revert behaves the same way, at 140 to 147 ms.
 
 > [!insight]
 > Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider. Together they let the meta-agents below fork on every step without the cost compounding.
@@ -264,8 +264,8 @@ A meta-agent rewinds a run from Python: it reverts the worker to an earlier comm
 Thanks to our early readers for their feedback.
 
 ```bibtex
-@misc{yu2026shepherdruntimesubstrateempowering,
-  title={Shepherd: A Runtime Substrate Empowering Meta-Agents with a Formalized Execution Trace},
+@misc{yu2026shepherdenablingprogrammablemetaagents,
+  title={Shepherd: Enabling Programmable Meta-Agents via Reversible Agentic Execution Traces},
   author={Simon Yu and Derek Chong and Ananjan Nandi and Dilara Soylu and Jiuding Sun and Christopher D Manning and Weiyan Shi},
   year={2026},
   eprint={2605.10913},

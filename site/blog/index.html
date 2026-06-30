@@ -245,10 +245,10 @@
 </tr>
 </tbody>
 </table>
-<p>Fork latency is flat across image sizes: 134 ms at 42 MB, 143 ms at 5.8 GB. A 138x bigger image costs 9 ms more, because overlay cost tracks what a branch <em>writes</em>, not how big the image is. That puts a fork about 5x faster than <code>docker commit</code> and up to 374x faster than copying the 5.8 GB root filesystem. Revert is the same, 140 to 147 ms. Replaying a fork is just as cheap: the unchanged prefix is reused from the provider's KV cache, about 95% of the tokens, so a branch only pays for what it adds.</p>
+<p>Shepherd's fork latency is constant across image sizes: 134 ms at 42 MB, 143 ms at 5.8 GB. That puts a fork about 5x faster than <code>docker commit</code> and up to 374x faster than copying the 5.8 GB root filesystem. Revert is the same, 140 to 147 ms. Replaying a fork is just as cheap: the unchanged prefix is reused from the provider's KV cache, about 95% of the tokens, so a branch only pays for what it adds.</p>
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Shepherd makes fork and revert cheap, 5x faster than <code>docker commit</code> and up to 374x faster than a full copy, a substrate fast enough for meta-agents to fork and branch on every step.</p>
+<p>Shepherd makes fork and revert cheap, 5x faster than <code>docker commit</code> and up to 374x faster than a full copy. This provides a need for meta-agents to fork and branch on every step.</p>
 </aside>
 
 <h1 id="experiments">Experiments</h1>
@@ -404,7 +404,7 @@
 <p><em>Terminal-Bench 2.0 performance, avg@5 (%); gain is relative improvement over flat GRPO.</em></p>
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Shepherd's mid-rollout forks give meta-agents a fine-grained, per-step reward instead of one final score, improving credit assignment for <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0.</p>
+<p>Shepherd's mid-rollout forks turn the outcome reward in agentic RL into fine-grained, per-step rewards, improving credit assignment for <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0.</p>
 </aside>
 
 <h1 id="faq">FAQ</h1>

@@ -101,10 +101,10 @@ We compare four ways to branch a running container's filesystem: a full root-fs 
 | BranchFS | 266 ms | 272 ms | 280 ms | 12 KB |
 | :smark: | **134 ms** | **135 ms** | **143 ms** | **10 KB** |
 
-Fork latency is flat across image sizes: 134 ms at 42 MB, 143 ms at 5.8 GB. A 138x bigger image costs 9 ms more, because overlay cost tracks what a branch *writes*, not how big the image is. That puts a fork about 5x faster than `docker commit` and up to 374x faster than copying the 5.8 GB root filesystem. Revert is the same, 140 to 147 ms. Replaying a fork is just as cheap: the unchanged prefix is reused from the provider's KV cache, about 95% of the tokens, so a branch only pays for what it adds.
+Shepherd's fork latency is constant across image sizes: 134 ms at 42 MB, 143 ms at 5.8 GB. That puts a fork about 5x faster than `docker commit` and up to 374x faster than copying the 5.8 GB root filesystem. Revert is the same, 140 to 147 ms. Replaying a fork is just as cheap: the unchanged prefix is reused from the provider's KV cache, about 95% of the tokens, so a branch only pays for what it adds.
 
 > [!insight]
-> Shepherd makes fork and revert cheap, 5x faster than `docker commit` and up to 374x faster than a full copy, a substrate fast enough for meta-agents to fork and branch on every step.
+> Shepherd makes fork and revert cheap, 5x faster than `docker commit` and up to 374x faster than a full copy. This provides a need for meta-agents to fork and branch on every step.
 
 # Experiments
 
@@ -184,7 +184,7 @@ A terminal agent can run thirty commands to fix a broken build and get back one 
 *Terminal-Bench 2.0 performance, avg@5 (%); gain is relative improvement over flat GRPO.*
 
 > [!insight]
-> Shepherd's mid-rollout forks give meta-agents a fine-grained, per-step reward instead of one final score, improving credit assignment for **+15.2%** over flat GRPO on Terminal-Bench 2.0.
+> Shepherd's mid-rollout forks turn the outcome reward in agentic RL into fine-grained, per-step rewards, improving credit assignment for **+15.2%** over flat GRPO on Terminal-Bench 2.0.
 
 # FAQ
 

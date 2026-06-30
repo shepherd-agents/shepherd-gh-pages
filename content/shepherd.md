@@ -1,5 +1,5 @@
 ---
-title: "Shepherd: A Runtime Substrate Empowering Meta-Agents with a Formalized Execution Trace"
+title: "Shepherd: Enabling Programmable Meta-Agents via Reversible Agentic Execution Traces"
 date: "2026-06-15"
 description: "A Git-like, reversible execution trace that makes the harness just another agent."
 authors:

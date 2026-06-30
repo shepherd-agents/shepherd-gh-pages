@@ -475,7 +475,7 @@ shepherd<span class="w"> </span>run<span class="w"> </span>trace<span class="w">
 * 0  0a2b8c1  run    "fix the login bug"       (root)</pre>
 </div>
 
-<p>A meta-agent rewinds a run the same way: it reverts the worker to an earlier commit and forks a fresh continuation, the <code>revert</code>-and-retry that <code>oversee</code> does above.</p>
+<p>See the <code>✗ 2 failed</code> at the top? <code>shepherd revert 4</code> rolls the agent and its filesystem back to commit 4, the state when it is still passing, so you can rerun and let the agent try the fix again.</p>
 <p>📦 <a href="https://pypi.org/project/shepherd-ai/0.0.1/"><strong>PyPI</strong></a>  |  💻 <a href="https://github.com/dcx/poc-crank-v2"><strong>Code</strong></a>  |  📖 <a href="https://docs.shepherd-agents.ai/"><strong>Docs</strong></a></p>
 <h1 id="acknowledgments">Acknowledgments</h1>
 <p>Thanks to our early readers for their feedback.</p>

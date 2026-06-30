@@ -133,6 +133,8 @@ code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1
 figure{margin:26px 0;max-width:var(--col)}
 figure img{display:block;width:100%;height:auto}
 figcaption{font-size:.86rem;color:var(--muted);margin-top:8px;line-height:1.5}
+figure.fig-half{max-width:calc(var(--col) / 2);margin-inline:auto}
+@media (max-width:760px){figure.fig-half{max-width:var(--col)}}
 
 /* ---- tables (tinted header + zebra rows + highlighted Shepherd row) ---- */
 table{border-collapse:collapse;width:100%;max-width:var(--col);margin:22px 0;font-size:.92rem}

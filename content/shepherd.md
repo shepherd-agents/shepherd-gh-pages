@@ -31,7 +31,7 @@ links:
 >
 > **Resources** &nbsp; <img class="rsrc" src="../assets/logo-shepherd.png" alt="">[Homepage](https://shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-arxiv.svg" alt="">[Paper](https://arxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-alphaxiv.png" alt="">[alphaXiv](https://www.alphaxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-github.svg" alt="">[Code](https://github.com/dcx/poc-crank-v2) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-docs.svg" alt="">[Docs](https://docs.shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-x.svg" alt="">Tweet
 
-![**Figure 1.** Three meta-agents built on Shepherd, three examples of many. *Top:* a meta-agent is a function over another agent's run; it observes, intercepts, forks, and reverts the worker, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
+![**Figure 1.** Three meta-agent examples built on Shepherd. *Top:* a meta-agent is a function over another agent's run; it observes, intercepts, forks, and reverts the worker, here catching a buggy edit and forking to a passing continuation. *Bottom:* Experiment Results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
 # Motivation
 

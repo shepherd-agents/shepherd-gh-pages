@@ -27,9 +27,9 @@
 <hr>
 <aside class="callout callout--tldr">
 
-<p>As agents take on more complex tasks, they increasingly rely on <strong>meta-agents</strong>: higher-order agents that create, operate on, and manage other agents mid-task. Yet building a meta-agent is challenging today: developers have to reconstruct agents' execution traces from raw LLM transcripts and final environment states, then manage them by hand.</p>
-<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is a runtime substrate that makes this easy. Drawing on functional programming, it keeps an agent's whole execution as a reversible, Git-like trace that one can branch, roll back, and replay. A meta-agent can then inspect and transform another agent's trace cheaply: a full filesystem revert and fork takes constant time, <strong>5x</strong> faster than <code>docker commit</code>.</p>
-<p>We demonstrate three examples of meta-agents, built on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates conflicts between two parallel agents, lifting pair-coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> proposes targeted edits to repair agent workflows, outperforming MetaHarness by <strong>+27.5%</strong> on LiveCodeBench with <strong>46%</strong> less wall-clock time. <strong>(3)</strong> A <strong>training meta-agent</strong> selects fork points in RL rollouts to enable Tree-GRPO, improving <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0. Beyond these examples, <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> opens up a broader space of meta-agent use cases in a principled and efficient way.</p>
+<p>As agents take on harder tasks, they increasingly rely on <strong>meta-agents</strong>: higher-order agents that create, manage, and operate on other agents mid-task. Building one is hard today, because developers have to rebuild an agent's execution from raw LLM transcripts and final environment states, then manage it by hand.</p>
+<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is a runtime substrate that keeps an agent's whole execution as a reversible, Git-like trace you can branch, roll back, and replay. A meta-agent reads and rewrites another agent's trace cheaply: a fork or revert runs in about 140 ms, <strong>5x</strong> faster than <code>docker commit</code> and up to <strong>374x</strong> faster than copying the filesystem.</p>
+<p>We build three meta-agents on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates two parallel coding agents, lifting pair coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> edits a finished workflow, beating MetaHarness by <strong>+27.5%</strong> on LiveCodeBench at <strong>46%</strong> less wall-clock. <strong>(3)</strong> A <strong>training meta-agent</strong> picks fork points for Tree-GRPO, adding <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0.</p>
 <p><strong>Resources</strong> &nbsp; <img class="rsrc" src="../../assets/logo-shepherd.png" alt=""><a href="https://shepherd-agents.ai/">Homepage</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-arxiv.svg" alt=""><a href="https://arxiv.org/abs/2605.10913">Paper</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-alphaxiv.png" alt=""><a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-github.svg" alt=""><a href="https://github.com/dcx/poc-crank-v2">Code</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-docs.svg" alt=""><a href="https://docs.shepherd-agents.ai/">Docs</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-x.svg" alt="">Tweet</p>
 </aside>
 
@@ -39,9 +39,8 @@
 </figure>
 
 <h1 id="motivation">Motivation</h1>
-<p>Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then ruin each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a <strong>meta-agent</strong>, and recent agentic systems increasingly look like this.<span class="sn"><input type="checkbox" id="sn1" class="sn-toggle"><label for="sn1" class="sn-ref">1</label><span class="sn-body"><span class="sn-num">1.</span> Examples like: Anthropic's Claude Code composes <a href="https://code.claude.com/docs/en/workflows">dynamic workflows</a> of sub-agents, Hermes Agents delegates to <a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation">agent teams</a>, and Kimi K2.5 coordinates an <a href="https://arxiv.org/abs/2602.02276">agent swarm</a>.</span></span></p>
-<p>To do their job, these meta-agents reach for the same few operations on the agent underneath: <strong>observe</strong> it as it runs, <strong>fork</strong> it to try a different direction, <strong>revert</strong> it on failure, <strong>modify</strong> it to fix the bug, and <strong>resume</strong>. Most agent frameworks only expose raw transcripts and environment snapshots, so every meta-agent has to reinvent the same components: parsing logs, replaying trajectories from scratch, re-running with code just to rebuild environment state<span class="sn"><input type="checkbox" id="sn2" class="sn-toggle"><label for="sn2" class="sn-ref">2</label><span class="sn-body"><span class="sn-num">2.</span> Check below table for comparison between <a href="https://arxiv.org/abs/2602.08199">BranchFS</a>, Docker native, <a href="https://arxiv.org/abs/2511.03690">OpenHands</a> and <a href="https://arxiv.org/abs/2511.00628">AgentGit</a>.</span></span>.</p>
-<p>Existing runtime frameworks are built on the assumption that only the main agent is <em>running</em>. None is built for another agent acting <em>on</em> it: none lets you operate on another <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">agent</span>'s whole execution and definition as data or traces.</p>
+<p>Run two coding agents in parallel to ship a feature faster, and they will edit the same file blind to each other and ruin the work. The fix is a higher-order agent watching both, ready to step in before they collide. That is a <strong>meta-agent</strong>, and recent agentic systems increasingly look like this.<span class="sn"><input type="checkbox" id="sn1" class="sn-toggle"><label for="sn1" class="sn-ref">1</label><span class="sn-body"><span class="sn-num">1.</span> Examples like: Anthropic's Claude Code composes <a href="https://code.claude.com/docs/en/workflows">dynamic workflows</a> of sub-agents, Hermes Agents delegates to <a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation">agent teams</a>, and Kimi K2.5 coordinates an <a href="https://arxiv.org/abs/2602.02276">agent swarm</a>.</span></span></p>
+<p>A meta-agent needs the same few operations on the agent underneath: <strong>observe</strong> it, <strong>fork</strong> it to try another direction, <strong>revert</strong> it on failure, <strong>modify</strong> it to fix a bug, and <strong>resume</strong>. Most frameworks only expose raw transcripts and environment snapshots, so every meta-agent rebuilds the same machinery by hand: parsing logs, replaying from scratch, re-running code just to recover the environment.<span class="sn"><input type="checkbox" id="sn2" class="sn-toggle"><label for="sn2" class="sn-ref">2</label><span class="sn-body"><span class="sn-num">2.</span> Check the table below for a comparison of <a href="https://arxiv.org/abs/2602.08199">BranchFS</a>, Docker, <a href="https://arxiv.org/abs/2511.03690">OpenHands</a>, and <a href="https://arxiv.org/abs/2511.00628">AgentGit</a>.</span></span> They are built for the agent that is <em>running</em>, not for a second agent acting <em>on</em> it.</p>
 <table>
 <thead>
 <tr>
@@ -92,8 +91,8 @@
 </table>
 <p><em>● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.</em></p>
 <h1 id="shepherd-a-runtime-substrate-for-programmable-meta-agents"><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>: A Runtime Substrate for Programmable Meta-Agents</h1>
-<p>A meta-agent operates on another agent's run while it happens: it watches the run, branches it to try an alternative, rolls it back when it fails, patches it, and lets it keep going. That only works if the run is something you can hold and manipulate, like a Git repo. So <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> records everything an agent does, every model call, tool call, and file write, as a commit in a Git-like trace that a meta-agent can read, branch, and rewind.</p>
-<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>'s system has four parts:</p>
+<p>A meta-agent operates on a run while it happens: it watches the run, branches it to try an alternative, rolls it back when it fails, patches it, and resumes. That only works if the run is something you can hold and manipulate, like a Git repo. So <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> records everything an agent does, every model call, tool call, and file write, as a commit in a Git-like trace a meta-agent can read, branch, and rewind.</p>
+<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> has four parts:</p>
 <table>
 <thead>
 <tr>
@@ -125,16 +124,44 @@
 </tr>
 </tbody>
 </table>
+<p>A meta-agent works the trace the way you work a Git repo:</p>
+<table>
+<thead>
+<tr>
+<th>In a Git repo</th>
+<th>In a <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git checkout -b</code></td>
+<td>fork the agent <strong>and its environment</strong> to try an alternative</td>
+</tr>
+<tr>
+<td><code>git merge</code></td>
+<td>keep the branch that worked</td>
+</tr>
+<tr>
+<td><code>git branch -D</code></td>
+<td>drop the one that didn't</td>
+</tr>
+<tr>
+<td><code>git log</code></td>
+<td>read every model call, tool call, and edit as commits</td>
+</tr>
+</tbody>
+</table>
+<p>Because both the agent and its run are data, a meta-agent is just a function over another agent's run, composed and called like any other task. The example at the end shows one.</p>
 <details>
-<p><summary>For those who are interested in more functional-programming view</summary></p>
+<p><summary>How it maps to functional programming</summary></p>
 <p><strong>The life of an effect.</strong> The split between intent and result is what makes the rest work. When an agent is about to call a tool, it first emits the <em>intent</em> as an effect; the kernel records it, and any subscribed meta-agent sees it on the stream. Only then does the call run, and its <em>outcome</em> is written back to the same effect. That ordering is why a supervisor can observe without perturbing (it reads intents the worker already emits) and intervene before damage lands (it acts in the gap between intent and result).</p>
-<p>The mapping in the table above is exact, and the properties a meta-agent relies on fall straight out of it. Algebraic effects are why observation never perturbs the worker and interception is possible at all: the intent exists as a value on the stream before the action runs. Scoped handlers are why a fork is a clean, nestable branch that merges back or is discarded as a unit. A persistent, content-addressed trace is why any past state replays byte for byte instead of being rebuilt from a log.</p>
+<p>The mapping in the table above is exact, and the properties a meta-agent relies on fall straight out of it. Algebraic effects are why observation never perturbs the worker and interception is possible at all: the intent exists as a value on the stream before the action runs. Scoped handlers are why a fork is a clean, nestable branch that merges back or is discarded as a unit. A persistent, content-addressed trace is why any past state replays exactly instead of being rebuilt from a log.</p>
 <p>The deterministic core of this calculus is mechanized in Lean, which lets us state the replay and revert guarantees precisely instead of by convention.</p>
 </details>
 <h1 id="infrastructure-shepherds-system-performance">Infrastructure: <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>'s System Performance</h1>
-<p>A meta-agent usually relies on a similar set of operations: it observes one or more agents, forks an agent to branch off a parallel attempt, reverts to an earlier state on failure, and replays a trajectory to try an alternative. For any of that to be worth doing at runtime, each operation has to be cheap enough to use without a second thought. This section measures the performance on the core operations.</p>
+<p>A meta-agent leans on a few operations over and over: it observes agents, forks one to branch a parallel attempt, reverts on failure, and replays a trajectory to try an alternative. At runtime each has to be cheap enough to reach for without thinking. We measure the two on the hot path, fork and revert.</p>
 <h4 id="setup">Setup</h4>
-<p>We compare four ways to branch a running container's filesystem: a full root-fs copy (<code>tar</code>), <code>docker commit</code>, BranchFS, and <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>'s overlay.<span class="sn"><input type="checkbox" id="sn3" class="sn-toggle"><label for="sn3" class="sn-ref">3</label><span class="sn-body"><span class="sn-num">3.</span> The Docker images are pre-built task environments from <a href="https://arxiv.org/abs/2601.11868">Terminal-Bench 2.0</a> (Merrill et al., 2026).</span></span> The workloads are three real Terminal-Bench 2.0 Docker images, at 42 MB, 200 MB, and 5.8 GB.<span class="sn"><input type="checkbox" id="sn4" class="sn-toggle"><label for="sn4" class="sn-ref">4</label><span class="sn-body"><span class="sn-num">4.</span> All runs use a single 4 vCPU / 8 GB Linux host.</span></span> We measure the runtime on two operations: <em>fork</em> and <em>revert</em>, averaged across 50 runs per cell.</p>
+<p>We compare four ways to branch a running container's filesystem: a full root-fs copy (<code>tar</code>), <code>docker commit</code>, BranchFS, and <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>'s overlay.<span class="sn"><input type="checkbox" id="sn3" class="sn-toggle"><label for="sn3" class="sn-ref">3</label><span class="sn-body"><span class="sn-num">3.</span> The Docker images are pre-built task environments from <a href="https://arxiv.org/abs/2601.11868">Terminal-Bench 2.0</a> (Merrill et al., 2026).</span></span> The workloads are three Terminal-Bench 2.0 images at 42 MB, 200 MB, and 5.8 GB,<span class="sn"><input type="checkbox" id="sn4" class="sn-toggle"><label for="sn4" class="sn-ref">4</label><span class="sn-body"><span class="sn-num">4.</span> All runs use a single 4 vCPU / 8 GB Linux host.</span></span> and we average fork and revert over 50 runs each.</p>
 <h4 id="fork-and-revert-latency">Fork and revert latency</h4>
 <table>
 <thead>
@@ -177,14 +204,14 @@
 </tr>
 </tbody>
 </table>
-<p>The latency is flat in image size. Across a 138x range the fork time moves from 134 ms to 143 ms, because overlay cost scales with what a branch changes rather than with the image. That is roughly 5x faster than <code>docker commit</code> and up to 374x faster than a full copy on the 5.8 GB image, and for fork, it takes 143 ms. Revert behaves the same way, at 140 to 147 ms.</p>
+<p>Fork latency is flat across image sizes: 134 ms at 42 MB, 143 ms at 5.8 GB. A 138x bigger image costs 9 ms more, because overlay cost tracks what a branch <em>writes</em>, not how big the image is. That puts a fork about 5x faster than <code>docker commit</code> and up to 374x faster than copying the 5.8 GB root filesystem. Revert is the same, 140 to 147 ms. Replaying a fork is just as cheap: the unchanged prefix is reused from the provider's KV cache, about 95% of the tokens, so a branch only pays for what it adds.</p>
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider. Together they let the meta-agents below fork on every step without the cost compounding.</p>
+<p>Shepherd makes fork and revert cheap, 5x faster than <code>docker commit</code> and up to 374x faster than a full copy, a substrate fast enough for meta-agents to fork and branch on every step.</p>
 </aside>
 
 <h1 id="experiments">Experiments</h1>
-<p>Here are three meta-agents we built on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>, at three moments in an agent's life. They are examples; the same handful of operations supports many more. Each is a plain agent, and each leans on a different substrate property.</p>
+<p>We build three meta-agents on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>, one for each moment in an agent's life: while it runs, after it finishes, and while it trains. Each is an ordinary agent, and each leans on a different property of the substrate.</p>
 <table>
 <thead>
 <tr>
@@ -217,16 +244,16 @@
 </figure>
 
 <h4 id="multi-agent-runtime-intervention">Multi-Agent Runtime Intervention</h4>
-<p><a href="https://arxiv.org/abs/2601.13295">CooperBench</a> documents a fact: two coding agents working in parallel on related features do <em>worse</em> than one agent doing both alone, because neither sees what the other is about to change. The remedy is a supervisor that watches both and steps in before a conflict lands.</p>
-<p><strong>Setup.</strong> Each task is a pair of related features in one repository. Two Claude Haiku 4.5 <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">worker</span>s run in parallel, one feature each, and a pair counts as passing only if both pass. We compare four conditions over the CooperBench pairs: one agent doing both features in sequence (<em>solo</em>), two workers in parallel with no coordination, two workers passing peer-to-peer messages (<em>coop</em>), and two workers under a meta-agent (ours).</p>
-<p>The meta-agent subscribes to both workers' effect streams. Every few seconds it looks at what each worker is doing, and picks one of three actions: <code>inject</code> a note into a worker's context to redirect it, <code>handoff</code> one worker's finished scope to the other so the second builds on the first instead of colliding with it, or <code>discard</code> a worker that has gotten stuck and restart it from a clean fork.</p>
-<p><strong>Results.</strong> The coop baseline reaches 28.8%, basically half of the 57.2% solo performance: peer messages alone do not keep two agents out of each other's way. <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> with Sonnet lifts the pass rate to 45.3% and an Opus variant boosts it further to 54.7%, a <strong>1.9x</strong> lift over the coop baseline.</p>
+<p><a href="https://arxiv.org/abs/2601.13295">CooperBench</a> shows that two coding agents working one repository in parallel do <em>worse</em> than one agent doing both, because neither sees what the other is about to change. The fix is a supervisor that watches both and steps in before a conflict lands.</p>
+<p><strong>Setup.</strong> Each task pairs two related features in one repo. Two Claude Haiku 4.5 <span class="brand brand--worker"><img class="brand__logo" src="../../assets/logo-agent.png" alt="">worker</span>s run one feature each in parallel, and a pair passes only if both do. We compare four conditions: <em>solo</em> (one agent, in sequence), uncoordinated parallel, <em>coop</em> (peer-to-peer messages), and two workers under a meta-agent (ours).</p>
+<p>The meta-agent subscribes to both workers' effect streams. Every few seconds it looks at what each worker is doing and picks one of three actions: <code>inject</code> a note into a worker's context to redirect it, <code>handoff</code> one worker's finished scope to the other so the second builds on the first instead of colliding with it, or <code>discard</code> a worker that has gotten stuck and restart it from a clean fork.</p>
+<p><strong>Results.</strong> The coop baseline reaches 28.8%, about half of the 57.2% solo ceiling: peer messages alone do not keep two agents out of each other's way. A Sonnet meta-agent lifts the pass rate to 45.3%, and an Opus one to 54.7%, a <strong>1.9x</strong> gain over coop.</p>
 <figure>
 <img src="../../assets/fig-supervision.png" alt="Figure 3. A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.">
 <figcaption><strong>Figure 3.</strong> A meta-agent supervisor recovers most of the coordination gap on CooperBench. Left: pair pass rate (coop 28.8%, +Sonnet 45.3%, +Opus 54.7%; solo single-agent ceiling 57.2%). Right: wall-clock per pair, with the meta-agent's overhead hatched.</figcaption>
 </figure>
 
-<p>The two supervisors reach for different tools. Counting pairs where each action fires at least once, the Opus meta-agent injects on 39.2% of pairs, hands off on 31.5%, and discards rarely (4.6%): it prefers to nudge and to reuse work. The weaker Sonnet supervisor intervenes less (26.4% inject, 18.7% handoff) but pulls the kill switch more often (7.9% discard), which reads as a less capable supervisor leaning on the blunt action when the precise ones are harder to land.</p>
+<p>The two supervisors reach for different tools. Counting pairs where each action fires at least once, the Opus meta-agent injects on 39.2% of pairs, hands off on 31.5%, and discards rarely (4.6%): it prefers to nudge and to reuse work. The weaker Sonnet supervisor intervenes less (26.4% inject, 18.7% handoff) but discards more often (7.9%), leaning on the blunt action when the precise ones are harder to land.</p>
 <figure class="fig-half">
 <img src="../../assets/fig-strategies.png" alt="Figure 4. The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.">
 <figcaption><strong>Figure 4.</strong> The stronger supervisor intervenes more and kills less. How often each meta-agent uses inject, handoff, and discard, as a share of the pairs where it fired the tool at least once.</figcaption>
@@ -234,13 +261,13 @@
 
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Meta-agents in <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> lift CooperBench's pair pass rate <strong>1.9x</strong> (28.8% → 54.7%), closing <strong>91%</strong> of the coordination gap: they supervise parallel agents without perturbing them, and add only minimal runtime overhead.</p>
+<p>Shepherd lets meta-agents supervise parallel agents through their effect streams, nearly doubling CooperBench's pair coding pass rate (28.8% → 54.7%).</p>
 </aside>
 
 <h4 id="counterfactual-meta-optimization">Counterfactual Meta-Optimization</h4>
-<p>You tweak one prompt in a ten-step research workflow and the score goes up two points. Was that your edit, or just a luckier roll of the dice? Re-run it and you'll get a third number. Optimizers that re-test every candidate with a fresh run from scratch spend most of their budget fighting that noise.</p>
-<p><strong>Setup.</strong> We compare counterfactual replay (CRO) against two optimizers, <a href="https://arxiv.org/abs/2507.19457">GEPA</a> and <a href="https://arxiv.org/abs/2603.28052">MetaHarness</a>, on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and Terminal-Bench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.</p>
-<p><strong>How CRO works.</strong> CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline.</p>
+<p>Optimizing a multi-step workflow is noisy. Tweak one prompt and the score moves two points; re-run it and you get a third number. Optimizers that re-test each candidate from a fresh run spend most of their budget fighting that noise, so CRO holds the run fixed instead.</p>
+<p><strong>Setup.</strong> We compare CRO against <a href="https://arxiv.org/abs/2507.19457">GEPA</a> and <a href="https://arxiv.org/abs/2603.28052">MetaHarness</a> on five benchmarks (HoVer, MATH, IFBench, LiveCodeBench, Terminal-Bench 2.0). GPT-5.4-mini runs the workflow, GPT-5.4 proposes the edits, and we record held-out pass rate and optimization wall-clock.</p>
+<p><strong>How CRO works.</strong> CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the unchanged prefix as a fixed baseline.</p>
 <p><strong>Results.</strong> CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound Terminal-Bench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 12.8% (31.2 to 35.2) at the least wall-clock of any method.</p>
 <table>
 <thead>
@@ -288,7 +315,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Test pass-rate mean ± std; optimization minutes in parentheses; bold = best per column. CRO's wall-clock lead over MetaHarness reaches ~58% on MATH (42 vs 101 min). On execution-heavy TB-2, neither GEPA nor MetaHarness beats the 31.2 baseline, while CRO reaches 35.2 (+12.8%) at the least wall-clock. The one near-tie is IFBench: MetaHarness edges CRO inside a std (52.3 vs 51.3), and CRO still does it in less time, 82 vs 126 minutes.</em></p>
+<p><em>Held-out pass rate (mean ± std); optimization minutes in parentheses; bold = best per column. CRO's biggest gain is on LiveCodeBench, +27.5% over MetaHarness.</em></p>
 <figure>
 <img src="../../assets/fig-cro.png" alt="Figure 5. Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.">
 <figcaption><strong>Figure 5.</strong> Counterfactual Meta-Optimization reaches a higher held-out score in less wall-clock on LiveCodeBench: CRO at 51.0, past GEPA (48.7), MetaHarness (40.0), and the 30.7 baseline.</figcaption>
@@ -296,13 +323,13 @@
 
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p>Meta-agents in <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> optimize workflows better than GEPA and MetaHarness, because byte-identical replay on trajectories lets them run counterfactual meta-optimization. They beat baselines on <strong>4 of 5</strong> benchmarks at lower wall-clock.</p>
+<p>Shepherd's replay lets meta-agents optimize a finished workflow, beating GEPA and MetaHarness on 4 of 5 benchmarks at less wall-clock.</p>
 </aside>
 
 <h4 id="meta-agent-guided-tree-rl">Meta-Agent-Guided Tree RL</h4>
-<p>An agent runs thirty commands to repair a broken Docker build and gets one bit back at the end: fixed, or not. Which of the thirty earned the reward? Flat GRPO can't tell them apart, so it reinforces all of them equally and learns slowly.</p>
-<p><strong>Setup.</strong> Training runs in two phases. First, rollout collection: the base policy runs on terminal-agent tasks from the <a href="https://arxiv.org/abs/2601.16443">Endless Terminals</a> dataset. At selected turns the meta-agent forks the scope and samples K=4 sibling continuations from that exact state. This helps for credit assignment, where the forked nodes' advantages come from the shared-prefix siblings, so no separate value model is needed. Flat GRPO and Tree-GRPO run on matched generation compute (same token budget and rollout), so the tree structure adds extra signal without adding compute.</p>
-<p><strong>Why the forks help.</strong> Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, providing more fine-grained rewards. And forked branches reuse the shared prefix, so each sibling shares the KV cache, reducing cost.</p>
+<p>A terminal agent can run thirty commands to fix a broken build and get back one bit at the end, fixed or not. Flat GRPO can't tell which command earned the reward, so it reinforces all of them equally and learns slowly.</p>
+<p><strong>Setup.</strong> During rollout collection on <a href="https://arxiv.org/abs/2601.16443">Endless Terminals</a> tasks, the meta-agent forks at selected turns and samples K=4 sibling continuations from that state; their advantages come from the spread across siblings, so no value model is needed. Flat GRPO and Tree-GRPO use matched generation compute, so the tree adds signal, not cost.</p>
+<p><strong>Why the forks help.</strong> Two siblings that share a prefix and diverge at one turn give a per-step counterfactual: the difference in their final rewards is what that turn was worth. That is the credit-assignment signal flat GRPO lacks, a finer-grained reward than one score at the end. And because forked branches reuse the shared prefix, each sibling pays only for its own suffix, so a K-way tree costs about K extra suffixes, not K full rollouts.</p>
 <figure>
 <img src="../../assets/fig-treegrpo.png" alt="Figure 6. Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.">
 <figcaption><strong>Figure 6.</strong> Tree-GRPO pulls ahead of flat GRPO as training proceeds. Mean training reward over rollout steps, for both models.</figcaption>
@@ -336,7 +363,7 @@
 <p><em>Terminal-Bench 2.0 performance, avg@5 (%); gain is relative improvement over flat GRPO.</em></p>
 <aside class="callout callout--insight">
 <p class="callout__label">💡 Takeaway:</p>
-<p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is able to train better RL policies because mid-rollout forks turn a single outcome reward into per-step advantage, which allows better credit assignment. This adds <strong>+15.2%</strong> with Qwen3.5-35B-A3B on Terminal-Bench 2.0.</p>
+<p>Shepherd's mid-rollout forks give meta-agents a fine-grained, per-step reward instead of one final score, improving credit assignment for <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0.</p>
 </aside>
 
 <h1 id="faq">FAQ</h1>
@@ -354,15 +381,15 @@
 </details>
 <details>
 <p><summary>What does a fork capture?</summary></p>
-<p>Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one step. Replay the branch and the agent picks up exactly where it left off.</p>
+<p>Everything the agent needs to keep going from that exact point: its filesystem and process state, its message history and model context, and its position in the execution trace, all captured together in one step. Replay the branch and the agent picks up where it left off.</p>
 </details>
 <details>
 <p><summary>When you "replay" a run, do you re-run the model? Is that faithful if LLMs are non-deterministic?</summary></p>
-<p>A replay restores the recorded prefix byte for byte, the same messages and files, resolved against the provider's prompt cache, so it is not re-run. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.</p>
+<p>A replay restores the recorded prefix exactly, the same messages and files, served from the provider's prompt cache, so it is not re-run. Only the suffix after your change re-executes. That is the point: everything up to the edit is held fixed and just the affected tail runs forward, which is what lets CRO judge an edit against an identical baseline instead of a fresh roll of the dice.</p>
 </details>
 <details>
 <p><summary>Is this production-ready, or a research substrate?</summary></p>
-<p>Today Shepherd is built for research, and we are actively moving it toward production. The core is small and its correctness argument is checked in Lean, and we are maintaining the framework and hardening it with each release. You can build on it now, and it will keep getting more production-ready over time.</p>
+<p>Today Shepherd is built for research, and we are actively moving it toward production. The core is small and its correctness argument is checked in Lean, and we maintain and harden the framework with each release. You can build on it now, and it will keep getting more production-ready over time.</p>
 </details>
 <details>
 <p><summary>Why <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>? and why a sheep?</summary></p>
@@ -373,22 +400,40 @@
 <div class="hl"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>shepherd-ai
 </code></pre></div>
 
-<p>You write agents, and meta-agents, as <code>@task</code> functions and run them in a <code>workspace</code>. Every run is recorded as a reversible, Git-like trace: every model call, tool call, and file edit is a commit.</p>
-<div class="hl"><pre><span></span><code>*  6  e8f1a2c  tool   · pytest tests/              ✗ 2 failed
-*  5  3b9d40e  edit   · auth/session.py   +18 -4
-*  4  a1c77f2  tool   · pytest tests/              ✓ 41 passed
-*  3  9f4e2a1  edit   · auth/login.py     +12 -3
-*  2  7c8d5b0  tool   · grep -rn &quot;session&quot; auth/
-*  1  c0ffee1  model  · plan: fix the login bug
-*  0  0a2b8c1  run    · &quot;fix the login bug&quot;   (root)
+<p>You write an agent, and a meta-agent, as <code>@task</code> functions and run them in a <code>workspace</code>. A meta-agent takes another agent's run as an argument, so supervising one is just another task:</p>
+<div class="hl"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">shepherd</span><span class="w"> </span><span class="kn">import</span> <span class="n">task</span><span class="p">,</span> <span class="n">workspace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shepherd.providers</span><span class="w"> </span><span class="kn">import</span> <span class="n">claude</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">implement</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">feature</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="s2">&quot;Implement the feature in the repo.&quot;</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">oversee</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">feature</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="s2">&quot;Watch the worker. If its tests fail, revert to the last green commit and retry.&quot;</span>
+
+<span class="k">with</span> <span class="n">workspace</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">claude</span><span class="p">(</span><span class="s2">&quot;sonnet-4-5&quot;</span><span class="p">)):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">oversee</span><span class="p">(</span><span class="n">implement</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">&quot;login&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Inspect any recorded run from the CLI, the way you'd read <code>git log</code>:</p>
+<p>Every run is recorded as a Git-like trace, which you can read from the CLI:</p>
 <div class="hl"><pre><span></span><code>shepherd<span class="w"> </span>run<span class="w"> </span>list<span class="w">               </span><span class="c1"># list recorded runs</span>
-shepherd<span class="w"> </span>run<span class="w"> </span>trace<span class="w"> </span>&lt;run-ref&gt;<span class="w">    </span><span class="c1"># walk a run&#39;s trace, commit by commit</span>
+shepherd<span class="w"> </span>run<span class="w"> </span>trace<span class="w"> </span>&lt;run-ref&gt;<span class="w">    </span><span class="c1"># walk a run, commit by commit</span>
 </code></pre></div>
 
-<p>A meta-agent rewinds a run from Python: it reverts the worker to an earlier commit and forks a fresh continuation, the same <code>revert</code>-and-retry a supervisor does above.</p>
+<div class="terminal">
+<div class="terminal__bar"><span></span><span></span><span></span></div>
+<pre><span class="t-cmd">$ shepherd run trace fix-login</span>
+* 6  e8f1a2c  tool   pytest tests/             <span class="t-fail">✗ 2 failed</span>
+* 5  3b9d40e  edit   auth/session.py           +18 -4
+* 4  a1c77f2  tool   pytest tests/             <span class="t-ok">✓ 41 passed</span>
+* 3  9f4e2a1  edit   auth/login.py             +12 -3
+* 2  7c8d5b0  tool   grep -rn "session" auth/
+* 1  c0ffee1  model  plan: fix the login bug
+* 0  0a2b8c1  run    "fix the login bug"       (root)</pre>
+</div>
+
+<p>A meta-agent rewinds a run the same way: it reverts the worker to an earlier commit and forks a fresh continuation, the <code>revert</code>-and-retry that <code>oversee</code> does above.</p>
 <p>📦 <a href="https://pypi.org/project/shepherd-ai/0.0.1/"><strong>PyPI</strong></a>  |  💻 <a href="https://github.com/dcx/poc-crank-v2"><strong>Code</strong></a>  |  📖 <a href="https://docs.shepherd-agents.ai/"><strong>Docs</strong></a></p>
 <h1 id="acknowledgments">Acknowledgments</h1>
 <p>Thanks to our early readers for their feedback.</p>

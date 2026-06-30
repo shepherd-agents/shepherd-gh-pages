@@ -37,7 +37,7 @@ links:
 
 Run two or more coding agents in parallel to ship a feature faster, and they'll happily edit the same file blind to each other, then ruined each other's work. The fix is a higher-order agent: a supervisor watching both, ready to step in before they collide. That's a **meta-agent**, and recent agentic systems increasingly look like this.^[Examples like: Anthropic's Claude Code composes [dynamic workflows](https://code.claude.com/docs/en/workflows) of sub-agents, Hermes Agents delegates to [agent teams](https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation), and Kimi K2.5 coordinates an [agent swarm](https://arxiv.org/abs/2602.02276).]
 
-To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it to try a different direction, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose transcripts and environment snapshots, so every meta-agent reinvents the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state^[Check below table for comparison between [BranchFS](https://arxiv.org/abs/2602.08199), Docker native, [OpenHands](https://arxiv.org/abs/2511.03690) and [AgentGit](https://arxiv.org/abs/2511.00628).].
+To do their job, these meta-agents reach for the same few operations on the agent underneath: **observe** it as it runs, **fork** it to try a different direction, **revert** it on failure, **modify** it to fix the bug, and **resume**. Today's substrates are not built for that. Most agent frameworks only expose raw transcripts and environment snapshots, so every meta-agent has to reinvent the same components: parsing logs, hand-rolling environment checkpoints, re-running with patched code just to rebuild environment state^[Check below table for comparison between [BranchFS](https://arxiv.org/abs/2602.08199), Docker native, [OpenHands](https://arxiv.org/abs/2511.03690) and [AgentGit](https://arxiv.org/abs/2511.00628).].
 
 Existing runtime frameworks only get part of the way there. Every one is built for the main agent that is *running*. None is built for a second agent acting *on* it: none lets you operate on another :agent:'s whole execution and definition as data or traces.
 
@@ -51,7 +51,7 @@ Existing runtime frameworks only get part of the way there. Every one is built f
 
 *● full · ◐ partial · ○ none. Existing runtimes cover pieces of what a meta-agent needs; :shepherd: is the only one where a second agent can intercept and modify a running agent, while the rest can only snapshot its files.*
 
-# :shepherd:: your harness is just another agent
+# :shepherd:: A Runtime Substrate for Programmable Meta-Agents
 
 A meta-agent operates on another agent's run while it happens: it watches the run, branches it to try an alternative, rolls it back when it fails, patches it, and lets it keep going. That only works if the run is something you can hold and manipulate, like a Git repo. So :shepherd: records everything an agent does, every model call, tool call, and file write, as a commit in a Git-like trace that a meta-agent can read, branch, and rewind.
 
@@ -175,7 +175,7 @@ You tweak one prompt in a ten-step research workflow and the score goes up two p
 
 **Setup.** We compare counterfactual replay (CRO) against two optimizers, [GEPA](https://arxiv.org/abs/2507.19457) and [MetaHarness](https://arxiv.org/abs/2603.28052), on five benchmarks: HoVer, MATH, IFBench, LiveCodeBench, and Terminal-Bench 2.0. GPT-5.4-mini runs the workflow being optimized and GPT-5.4 is the optimizer that proposes edits. For each method we record the held-out pass rate and the wall-clock minutes it spends optimizing.
 
-**How CRO works.** CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache (the KV-cache result above), so each evaluation stays cheap.
+**How CRO works.** CRO holds everything constant except the edit. It takes a finished run, forks the trace at the first commit the edit touches, and replays only the suffix from there, against the byte-identical prefix as a fixed baseline. Every candidate is scored on the same frozen history, so a score change reflects the edit alone, not a different roll of the dice. The shared prefix replays from the provider's KV cache, so each evaluation stays cheap.
 
 **Results.** CRO takes 4 of the 5 benchmarks, with the highest held-out score and the lowest wall-clock on each. The margins are widest where exploration matters most: it scores 27.5% higher than MetaHarness on LiveCodeBench (51.0 vs 40.0), and on execution-bound Terminal-Bench 2.0, where neither GEPA nor MetaHarness beats the baseline at all, it lifts the score by 12.8% (31.2 to 35.2) at the least wall-clock of any method.
 

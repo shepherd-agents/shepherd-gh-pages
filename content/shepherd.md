@@ -31,7 +31,7 @@ links:
 >
 > **Resources** &nbsp; <img class="rsrc" src="../assets/logo-shepherd.png" alt="">[Homepage](https://shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-arxiv.svg" alt="">[Paper](https://arxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-alphaxiv.png" alt="">[alphaXiv](https://www.alphaxiv.org/abs/2605.10913) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-github.svg" alt="">[Code](https://github.com/dcx/poc-crank-v2) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-docs.svg" alt="">[Docs](https://docs.shepherd-agents.ai/) &nbsp;·&nbsp; <img class="rsrc" src="../assets/icon-x.svg" alt="">Tweet
 
-![**Figure 1.** Three meta-agents built on Shepherd, three examples of many. *Top:* a meta-agent is a plain function over another agent's run; it observes, intercepts, forks, and reverts the worker through a shared trace, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
+![**Figure 1.** Three meta-agents built on Shepherd, three examples of many. *Top:* a meta-agent is a function over another agent's run; it observes, intercepts, forks, and reverts the worker, here catching a buggy edit and forking to a passing continuation. *Bottom:* headline results. (a) Multi-Agent Runtime Intervention lifts CooperBench pair pass rate to 54.7%; (b) Counterfactual Optimization beats GEPA and MetaHarness on LiveCodeBench; (c) Meta-Agent-Guided Tree RL adds +15.2% on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
 # Motivation
 
@@ -131,7 +131,7 @@ A supervisor reads a worker by subscribing to its effect stream, which raises a 
 
 #### KV-cache reuse under replay
 
-Because a fork preserves the byte-identical prefix of a run, replaying a branch presents the provider with the same prefix tokens in the same order, which it serves from its KV cache rather than recomputing. We measured the end-to-end hit rate on TB-2 tasks with Haiku 4.5, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward it settles near 95%. Forking K siblings mid-trajectory, which is what Tree-GRPO does on every probed turn, therefore adds little token cost on top of the disk cost.
+A fork preserves the prefix of a run, replaying a branch presents the provider with the same prefix tokens, which it serves from its KV cache. We measured the end-to-end hit rate on TB-2 tasks with Claude models, sweeping fork depth (10, 25, 50, and 75 steps) against branching factor K ∈ {1, 2, 4, 8}. From K=2 onward the KV cache reuse are near 95%.
 
 > [!insight]
 > Shepherd keeps a fork cheap on disk (about 10 KB and 143 ms even at 5.8 GB), and a byte-identical prefix keeps replaying that fork cheap at the provider (about 95% KV reuse). Together they let the meta-agents below fork on every step without the cost compounding.

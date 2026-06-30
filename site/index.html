@@ -57,7 +57,7 @@
   <!-- ===== Teaser ===== -->
   <figure class="teaser">
     <video class="teaser__video" src="assets/teaser.mp4" poster="assets/teaser.png" autoplay loop muted playsinline controls></video>
-    <figcaption><b>Figure 1.</b> A meta-agent creates, observes, intercepts, forks, and reverts a worker's execution trace, written as ordinary <code>@agent</code> code. The same substrate powers three meta-agents: runtime intervention, counterfactual optimization, and tree-search RL.</figcaption>
+    <figcaption><b>Figure 1.</b> A meta-agent creates, observes, intercepts, forks, and reverts a worker's execution trace, written as ordinary <code>@task</code> code. The same substrate powers three meta-agents: runtime intervention, counterfactual optimization, and tree-search RL.</figcaption>
   </figure>
 
   <!-- ===== Abstract ===== -->
@@ -96,7 +96,7 @@
       A meta-agent <b>creates</b> a worker, <b>observes</b> its execution without perturbing it, and
       <b>intercepts</b> a bad action before it lands, then forks a patched branch and reverts the
       buggy one. Because the whole run is a reversible, Git-like trace, all of this is ordinary
-      <code>@agent</code> code.
+      <code>@task</code> code.
     </p>
 
     <div class="anim" id="anim">
@@ -178,18 +178,19 @@
       </div>
 
       <div class="anim__code">
-        <div class="cimport"><span class="kwt">from</span> shepherd <span class="kwt">import</span> agent, observe, revert, fork</div>
-        <pre class="cblock cblock--agent" data-step="create"><span class="cm"># agent</span>
-<span class="kw">@agent</span>(LLM=<span class="st">"haiku"</span>)
+        <div class="cimport"><span class="kwt">from</span> shepherd <span class="kwt">import</span> task, workspace</div>
+        <div class="cimport"><span class="kwt">from</span> shepherd.providers <span class="kwt">import</span> claude</div>
+        <pre class="cblock cblock--agent" data-step="create"><span class="cm"># worker</span>
+<span class="kw">@task</span>
 <span class="kw">def</span> <span class="fn">implement</span>(repo, feature):
-    <span class="st">"Implement feature in repo"</span></pre>
+    <span class="st">"Implement the feature in the repo"</span></pre>
         <pre class="cblock cblock--meta" data-step="intercept"><span class="cm"># meta-agent</span>
-<span class="kw">@agent</span>(LLM=<span class="st">"opus"</span>, tool=[observe, revert, fork])
-<span class="kw">def</span> <span class="fn">oversee</span>(agent_run):
-    <span class="st">"If tests break, revert the agent and retry"</span></pre>
-        <pre class="cblock cblock--manage" data-step="fork"><span class="cm"># meta-agent manages the agent</span>
-agent_run = <span class="fn">implement</span>(repo, <span class="st">"login"</span>)
-implemented = <span class="fn">oversee</span>(agent_run)</pre>
+<span class="kw">@task</span>
+<span class="kw">def</span> <span class="fn">oversee</span>(worker, repo, feature):
+    <span class="st">"If tests break, revert the worker and retry"</span></pre>
+        <pre class="cblock cblock--manage" data-step="fork"><span class="cm"># the meta-agent manages the worker</span>
+<span class="kw">with</span> <span class="fn">workspace</span>(model=<span class="fn">claude</span>(<span class="st">"sonnet-4-5"</span>)):
+    implemented = <span class="fn">oversee</span>(implement, repo, <span class="st">"login"</span>)</pre>
       </div>
 
       <div class="anim__scrub" aria-label="Step through the trace">
@@ -218,13 +219,13 @@ implemented = <span class="fn">oversee</span>(agent_run)</pre>
     <div class="try">
       <div class="try__text">
         <p>
-          Install Shepherd, drop in the plugin for your coding agent, and every step it takes becomes a
+          Install Shepherd, write your agent as a Python task, and every step it takes becomes a
           commit on a reversible, Git-like trace.
         </p>
         <p>
-          From there the trace is yours to drive: <code>shepherd log</code> shows the steps, and when a
-          run goes sideways, <code>shepherd revert 4</code> restores the agent <em>and</em> its files to
-          step 4, byte-for-byte, the way <code>git checkout</code> rewinds a repo.
+          From there the trace is yours to drive: inspect any run's steps with <code>shepherd run trace</code>,
+          and a meta-agent can revert the agent <em>and</em> its files to an earlier step, byte-for-byte,
+          the way <code>git checkout</code> rewinds a repo.
         </p>
         <p class="muted">
           See the <a href="https://github.com/dcx/poc-crank-v2" target="_blank" rel="noopener">GitHub repo</a>
@@ -238,17 +239,11 @@ implemented = <span class="fn">oversee</span>(agent_run)</pre>
           <button class="terminal__copy" type="button" aria-label="Copy commands"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
         </div>
         <pre class="terminal__body"><code><span class="p">$</span> pip install shepherd-ai
-<span class="p">$</span> shepherd init
 
-<span class="c"># add the Claude Code (or Codex) plugin</span>
-<span class="p">$</span> shepherd plugin install claude-code
-
-<span class="c"># run it: every step is a commit</span>
-<span class="p">$</span> shepherd run claude <span class="s">"fix the login bug"</span>
-
-<span class="c"># went wrong? roll back like git</span>
-<span class="p">$</span> shepherd log
-<span class="p">$</span> shepherd revert 4</code></pre>
+<span class="c"># scaffold a package, then inspect the reversible trace each run records</span>
+<span class="p">$</span> shepherd init payments
+<span class="p">$</span> shepherd run list
+<span class="p">$</span> shepherd run trace &lt;run-ref&gt;</code></pre>
       </div>
     </div>
   </section>

@@ -265,11 +265,12 @@ with workspace(model=claude("sonnet-4-5")):
     result = oversee(implement, repo, "login")
 ```
 
-Every run is recorded as a Git-like trace, which you can read from the CLI:
+Every run is recorded as a Git-like trace, which you can read and rewind from the CLI:
 
 ```bash
 shepherd run list               # list recorded runs
 shepherd run trace <run-ref>    # walk a run, commit by commit
+shepherd revert <commit>        # roll the agent + filesystem back to an earlier commit
 ```
 
 <div class="terminal">

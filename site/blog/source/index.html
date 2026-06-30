@@ -417,9 +417,10 @@
     <span class="n">result</span> <span class="o">=</span> <span class="n">oversee</span><span class="p">(</span><span class="n">implement</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">&quot;login&quot;</span><span class="p">)</span>
 </code></pre></div>
 
-<p>Every run is recorded as a Git-like trace, which you can read from the CLI:</p>
+<p>Every run is recorded as a Git-like trace, which you can read and rewind from the CLI:</p>
 <div class="hl"><pre><span></span><code>shepherd<span class="w"> </span>run<span class="w"> </span>list<span class="w">               </span><span class="c1"># list recorded runs</span>
 shepherd<span class="w"> </span>run<span class="w"> </span>trace<span class="w"> </span>&lt;run-ref&gt;<span class="w">    </span><span class="c1"># walk a run, commit by commit</span>
+shepherd<span class="w"> </span>revert<span class="w"> </span>&lt;commit&gt;<span class="w">        </span><span class="c1"># roll the agent + filesystem back to an earlier commit</span>
 </code></pre></div>
 
 <div class="terminal">

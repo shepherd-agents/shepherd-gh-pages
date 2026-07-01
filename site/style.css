@@ -70,12 +70,13 @@ p  { margin: 0 0 16px; }
 .authors { font-size: 1.08rem; line-height: 1.5; margin: 0 auto 6px; max-width: 44em; }
 .affil { font-size: .95rem; color: var(--muted); margin: 0 0 20px; }
 
-.links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 0; }
+.links { display: flex; flex-wrap: nowrap; gap: 8px; justify-content: center; margin: 0; }
 .lnk {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 1.12rem; font-weight: 600;
-  padding: 10px 22px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 1rem; font-weight: 600;
+  padding: 9px 16px; border-radius: 999px;
   background: var(--text); color: #fff;
+  white-space: nowrap;
 }
 .lnk svg { width: 18px; height: 18px; flex: none; }
 .lnk:hover { background: #000; color: #fff; text-decoration: none; }
@@ -271,7 +272,7 @@ img, svg, video, pre, table { max-width: 100%; }
   .orgs { gap: 16px; margin-bottom: 18px; }
   .orgs img { height: 38px; }
   .orgs img[alt="Stanford NLP Group"] { height: 70px; }
-  .links { gap: 8px; }
+  .links { flex-wrap: wrap; gap: 8px; }
   .lnk { font-size: 1rem; padding: 9px 20px; }
   .teaser { margin: 22px 0; }
   figcaption { font-size: .82rem; }

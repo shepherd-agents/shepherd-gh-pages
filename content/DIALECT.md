@@ -112,7 +112,7 @@ literal text. Keep a blank line after `<summary>` and before `</details>`:
 <details markdown="1">
 <summary>Does it work with my model?</summary>
 
-Yes. You write agents as typed `@shp.task` functions and **swap the model**
+Yes. You write agents as typed `@sd.task` functions and **swap the model**
 behind a [provider](https://docs.shepherd-agents.ai/).
 
 </details>

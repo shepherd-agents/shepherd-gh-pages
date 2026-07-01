@@ -228,18 +228,21 @@
     <div class="try">
       <div class="try__text">
         <p>
-          Install Shepherd, write your agent as a Python task, and every step it takes becomes a
-          commit on a reversible, Git-like trace.
+          Write your agent as a plain Python task and run it. Every step it takes becomes a
+          commit on a reversible, Git-like trace — and its work comes back as a held proposal,
+          not as edits to your files.
         </p>
         <p>
-          From there the trace is yours to drive: inspect any run's steps with <code>shepherd run trace</code>,
-          and a meta-agent can revert the agent <em>and</em> its files to an earlier step, byte-for-byte,
-          the way <code>git checkout</code> rewinds a repo.
+          The demo below is real: a Claude agent writes a working program from a one-line prompt.
+          Inspect what it did with <code>shepherd run trace</code>, then decide. A meta-agent can
+          rewind the agent <em>and</em> its files to any earlier step, byte-for-byte — or fork
+          from there and try a different path.
         </p>
         <p class="muted">
-          See the <a href="https://github.com/shepherd-agents/shepherd" target="_blank" rel="noopener">GitHub repo</a>
-          for more, and the <a href="blog/">blog</a>
-          for the full walkthrough.
+          Needs the <code>claude</code> CLI, signed in. No key? The
+          <a href="https://github.com/shepherd-agents/shepherd" target="_blank" rel="noopener">repo</a>'s
+          offline quickstart runs the same machinery, keyless — and the <a href="blog/">blog</a>
+          has the full walkthrough.
         </p>
       </div>
       <div class="terminal">
@@ -249,10 +252,16 @@
         </div>
         <pre class="terminal__body"><code><span class="p">$</span> pip install shepherd-ai
 
-<span class="c"># scaffold a package, then inspect the reversible trace each run records</span>
-<span class="p">$</span> shepherd init payments
-<span class="p">$</span> shepherd run list
-<span class="p">$</span> shepherd run trace &lt;run-ref&gt;</code></pre>
+<span class="c"># let a real agent do a real task — in custody, not in your files</span>
+<span class="p">$</span> shepherd init
+<span class="p">$</span> shepherd demo write agent-task &gt; agent_task.py
+<span class="p">$</span> python agent_task.py
+
+<span class="c"># every step is on the trace; the work is held for review</span>
+<span class="p">$</span> shepherd run trace --latest
+
+<span class="c"># keep it — or not; the trace remembers either way</span>
+<span class="p">$</span> shepherd run select &lt;run-ref&gt;</code></pre>
       </div>
     </div>
   </section>

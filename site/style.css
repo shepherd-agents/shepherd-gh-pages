@@ -72,10 +72,12 @@ p  { margin: 0 0 16px; }
 
 .links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 0; }
 .lnk {
-  display: inline-block; font-size: 1.12rem; font-weight: 600;
-  padding: 10px 26px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 1.12rem; font-weight: 600;
+  padding: 10px 22px; border-radius: 999px;
   background: var(--text); color: #fff;
 }
+.lnk svg { width: 18px; height: 18px; flex: none; }
 .lnk:hover { background: #000; color: #fff; text-decoration: none; }
 .lnk--off { background: var(--code-bg); color: var(--faint); cursor: default; }
 

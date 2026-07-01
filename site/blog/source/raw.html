@@ -47,7 +47,7 @@ links:
   - { label: &#34;Homepage&#34;, url: &#34;https://shepherd-agents.ai/&#34; }
   - { label: &#34;Paper&#34;,    url: &#34;https://arxiv.org/abs/2605.10913&#34; }
   - { label: &#34;alphaXiv&#34;, url: &#34;https://www.alphaxiv.org/abs/2605.10913&#34; }
-  - { label: &#34;Code&#34;,     url: &#34;https://github.com/dcx/poc-crank-v2&#34; }
+  - { label: &#34;Code&#34;,     url: &#34;https://github.com/shepherd-agents/shepherd&#34; }
   - { label: &#34;Docs&#34;,     url: &#34;https://docs.shepherd-agents.ai/&#34; }
   - { label: &#34;X Thread (soon)&#34; }
 ---
@@ -59,7 +59,7 @@ links:
 &gt;
 &gt; We demonstrate three meta-agents on :shepherd:. **(1)** A **runtime supervisor** coordinates two parallel coding agents, lifting pair coding pass rate **1.9x** (28.8% → 54.7%). **(2)** A **counterfactual optimizer** edits a finished workflow, beating MetaHarness by **+27.5%** on LiveCodeBench at **46%** less wall-clock. **(3)** A **training meta-agent** picks fork points for Tree-GRPO in agentic RL, adding **+15.2%** over flat GRPO on Terminal-Bench 2.0.
 &gt;
-&gt; **Resources** &amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/logo-shepherd.png&#34; alt=&#34;&#34;&gt;[Homepage](https://shepherd-agents.ai/) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-arxiv.svg&#34; alt=&#34;&#34;&gt;[Paper](https://arxiv.org/abs/2605.10913) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-alphaxiv.png&#34; alt=&#34;&#34;&gt;[alphaXiv](https://www.alphaxiv.org/abs/2605.10913) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-github.svg&#34; alt=&#34;&#34;&gt;[Code](https://github.com/dcx/poc-crank-v2) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-docs.svg&#34; alt=&#34;&#34;&gt;[Docs](https://docs.shepherd-agents.ai/) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-x.svg&#34; alt=&#34;&#34;&gt;Tweet
+&gt; **Resources** &amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/logo-shepherd.png&#34; alt=&#34;&#34;&gt;[Homepage](https://shepherd-agents.ai/) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-arxiv.svg&#34; alt=&#34;&#34;&gt;[Paper](https://arxiv.org/abs/2605.10913) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-alphaxiv.png&#34; alt=&#34;&#34;&gt;[alphaXiv](https://www.alphaxiv.org/abs/2605.10913) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-github.svg&#34; alt=&#34;&#34;&gt;[Code](https://github.com/shepherd-agents/shepherd) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-docs.svg&#34; alt=&#34;&#34;&gt;[Docs](https://docs.shepherd-agents.ai/) &amp;nbsp;·&amp;nbsp; &lt;img class=&#34;rsrc&#34; src=&#34;../assets/icon-x.svg&#34; alt=&#34;&#34;&gt;Tweet
 
 ![**Figure 1.** *Top:* (left) The visualization of an optimization meta-agent and (right) its implementation in Shepherd. A meta-agent is a function over another agent&#39;s run: here it creates and observes the worker, intercepts when the worker makes a buggy edit, then reverts it, and forks to continue with another passing edit. *Bottom:* Experiment results of three example meta-agents. (a) a runtime supervisor coordinates multiple agents, lifting the pair-coding pass rate; (b) a meta-optimizer proposes counterfactual edits, beating GEPA and MetaHarness on LiveCodeBench; (c) a training meta-agent guides the credit assignment in Tree RL, outperforming flat GRPO on Terminal-Bench 2.0.](../assets/fig-teaser.png)
 
@@ -317,7 +317,7 @@ shepherd revert &lt;commit&gt;        # roll the agent + filesystem back to an e
 
 See the `✗ 2 failed` at the top? `shepherd revert 4` rolls the agent and its filesystem back to commit 4, the state when it is still passing, so you can rerun and let the agent try the fix again.
 
-📦 [**PyPI**](https://pypi.org/project/shepherd-ai/0.0.1/)  |  💻 [**Code**](https://github.com/dcx/poc-crank-v2)  |  📖 [**Docs**](https://docs.shepherd-agents.ai/)
+📦 [**PyPI**](https://pypi.org/project/shepherd-ai/)  |  💻 [**Code**](https://github.com/shepherd-agents/shepherd)  |  📖 [**Docs**](https://docs.shepherd-agents.ai/)
 
 # Acknowledgments
 

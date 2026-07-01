@@ -23,14 +23,14 @@
 <h1>Shepherd: Enabling Programmable Meta-Agents via Reversible Agentic Execution Traces</h1>
 <p>Simon Yu*<sup>1</sup>, Derek Chong*<sup>2</sup>, Ananjan Nandi*<sup>2</sup>, Dilara Soylu<sup>2</sup>, Jiuding Sun<sup>2</sup>, Christopher D. Manning<sup>2</sup>, Weiyan Shi<sup>1</sup><br>
 <sup>1</sup>Northeastern University &middot; <sup>2</sup>Stanford University</p>
-<p><a href="https://shepherd-agents.ai/">Homepage</a> &middot; <a href="https://arxiv.org/abs/2605.10913">Paper</a> &middot; <a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &middot; <a href="https://github.com/dcx/poc-crank-v2">Code</a> &middot; <a href="https://docs.shepherd-agents.ai/">Docs</a> &middot; </p>
+<p><a href="https://shepherd-agents.ai/">Homepage</a> &middot; <a href="https://arxiv.org/abs/2605.10913">Paper</a> &middot; <a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &middot; <a href="https://github.com/shepherd-agents/shepherd">Code</a> &middot; <a href="https://docs.shepherd-agents.ai/">Docs</a> &middot; </p>
 <hr>
 <aside class="callout callout--tldr">
 
 <p>As agents take on harder tasks, they increasingly rely on <strong>meta-agents</strong>: higher-order agents that create, manage, and operate on other agents at runtime. Yet today, building meta-agents requires developers to rebuild an agent's execution trace from raw LLM transcripts and final environment states, then manage it by hand.</p>
 <p><span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span> is a runtime substrate that maintains an agent's execution as a reversible, Git-like trace you can branch, roll back, and replay. This lets meta-agents read and operate over another agent's trace cheaply, steering its execution as it runs.</p>
 <p>We demonstrate three meta-agents on <span class="brand"><img class="brand__logo" src="../../assets/logo-shepherd.png" alt="">Shepherd</span>. <strong>(1)</strong> A <strong>runtime supervisor</strong> coordinates two parallel coding agents, lifting pair coding pass rate <strong>1.9x</strong> (28.8% → 54.7%). <strong>(2)</strong> A <strong>counterfactual optimizer</strong> edits a finished workflow, beating MetaHarness by <strong>+27.5%</strong> on LiveCodeBench at <strong>46%</strong> less wall-clock. <strong>(3)</strong> A <strong>training meta-agent</strong> picks fork points for Tree-GRPO in agentic RL, adding <strong>+15.2%</strong> over flat GRPO on Terminal-Bench 2.0.</p>
-<p><strong>Resources</strong> &nbsp; <img class="rsrc" src="../../assets/logo-shepherd.png" alt=""><a href="https://shepherd-agents.ai/">Homepage</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-arxiv.svg" alt=""><a href="https://arxiv.org/abs/2605.10913">Paper</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-alphaxiv.png" alt=""><a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-github.svg" alt=""><a href="https://github.com/dcx/poc-crank-v2">Code</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-docs.svg" alt=""><a href="https://docs.shepherd-agents.ai/">Docs</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-x.svg" alt="">Tweet</p>
+<p><strong>Resources</strong> &nbsp; <img class="rsrc" src="../../assets/logo-shepherd.png" alt=""><a href="https://shepherd-agents.ai/">Homepage</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-arxiv.svg" alt=""><a href="https://arxiv.org/abs/2605.10913">Paper</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-alphaxiv.png" alt=""><a href="https://www.alphaxiv.org/abs/2605.10913">alphaXiv</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-github.svg" alt=""><a href="https://github.com/shepherd-agents/shepherd">Code</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-docs.svg" alt=""><a href="https://docs.shepherd-agents.ai/">Docs</a> &nbsp;·&nbsp; <img class="rsrc" src="../../assets/icon-x.svg" alt="">Tweet</p>
 </aside>
 
 <figure>
@@ -436,7 +436,7 @@ shepherd<span class="w"> </span>revert<span class="w"> </span>&lt;commit&gt;<spa
 </div>
 
 <p>See the <code>✗ 2 failed</code> at the top? <code>shepherd revert 4</code> rolls the agent and its filesystem back to commit 4, the state when it is still passing, so you can rerun and let the agent try the fix again.</p>
-<p>📦 <a href="https://pypi.org/project/shepherd-ai/0.0.1/"><strong>PyPI</strong></a>  |  💻 <a href="https://github.com/dcx/poc-crank-v2"><strong>Code</strong></a>  |  📖 <a href="https://docs.shepherd-agents.ai/"><strong>Docs</strong></a></p>
+<p>📦 <a href="https://pypi.org/project/shepherd-ai/"><strong>PyPI</strong></a>  |  💻 <a href="https://github.com/shepherd-agents/shepherd"><strong>Code</strong></a>  |  📖 <a href="https://docs.shepherd-agents.ai/"><strong>Docs</strong></a></p>
 <h1 id="acknowledgments">Acknowledgments</h1>
 <p>Thanks to our early readers for their feedback.</p>
 <div class="hl"><pre><span></span><code><span class="nc">@misc</span><span class="p">{</span><span class="nl">yu2026shepherdenablingprogrammablemetaagents</span><span class="p">,</span>

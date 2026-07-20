@@ -291,7 +291,7 @@ See the `✗ 2 failed` at the top? `shepherd revert 4` rolls the agent and its f
 
 # Acknowledgments
 
-Thanks to our early readers for their feedback.
+Thanks to our early readers for their feedback. We also thank [E2B](https://e2b.dev/), [Tinker](https://thinkingmachines.ai/tinker/), and [Modal](https://modal.com/) for their generous compute support during this project.
 
 ```bibtex
 @misc{yu2026shepherdenablingprogrammablemetaagents,
